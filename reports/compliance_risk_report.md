@@ -3,14 +3,14 @@
 
 ## Executive Summary
 
-**Total findings:** 18  
-**Requires immediate action (Critical + High):** 10  
+**Total findings:** 17  
+**Requires immediate action (Critical + High):** 9  
 **Requires human review (regulatory ambiguity):** 1  
 
 | Severity | Count |
 |----------|-------|
 | 🔴 CRITICAL | 3 |
-| 🟠 HIGH | 7 |
+| 🟠 HIGH | 6 |
 | 🟡 MEDIUM | 8 |
 | 🟢 LOW | 0 |
 | ℹ️  INFO | 0 |
@@ -137,20 +137,7 @@
 
 ---
 
-### Finding 8: Cardholder data stored without retention policy
-
-**Severity:** 🟠 HIGH  
-**Service:** `merchant-dashboard`  
-**Rule ID:** `CUSTOM-MISSING-RETENTION-CARDHOLDER`  
-**Regulatory Citation:** GDPR Article 5(1)(e); PCI DSS v4.0 Requirement 3.2  
-
-**Description:** Service 'merchant-dashboard' stores cardholder PAN data without a documented retention period.
-
-**Remediation:** Define retention aligned with contractual need (typically 7 years for payment records under EU financial regulation). Implement automated purge.
-
----
-
-### Finding 9: No retention policy defined for personal data
+### Finding 8: No retention policy defined for personal data
 
 **Severity:** 🟠 HIGH  
 **Service:** `analytics-warehouse`  
@@ -165,7 +152,7 @@
 
 ---
 
-### Finding 10: No valid lawful basis documented for personal data processing
+### Finding 9: No valid lawful basis documented for personal data processing
 
 **Severity:** 🟠 HIGH  
 **Service:** `analytics-warehouse`  
@@ -178,7 +165,7 @@
 
 ---
 
-### Finding 11: Personal data stored but not referenced in any API or transfer
+### Finding 10: Personal data stored but not referenced in any API or transfer
 
 **Severity:** 🟡 MEDIUM  
 **Service:** `payment-gateway-api`  
@@ -193,7 +180,7 @@
 
 ---
 
-### Finding 12: Direct identifiers retained 3 years in fraud/ML store — GDPR/PCI conflict ⚠️ **HUMAN REVIEW REQUIRED**
+### Finding 11: Direct identifiers retained 3 years in fraud/ML store — GDPR/PCI conflict ⚠️ **HUMAN REVIEW REQUIRED**
 
 **Severity:** 🟡 MEDIUM  
 **Service:** `fraud-engine`  
@@ -210,7 +197,7 @@
 
 ---
 
-### Finding 13: Full PAN stored but only last-4 digits exposed — data minimization failure
+### Finding 12: Full PAN stored but only last-4 digits exposed — data minimization failure
 
 **Severity:** 🟡 MEDIUM  
 **Service:** `merchant-dashboard`  
@@ -225,7 +212,7 @@
 
 ---
 
-### Finding 14: Personal data stored but not referenced in any API or transfer
+### Finding 13: Personal data stored but not referenced in any API or transfer
 
 **Severity:** 🟡 MEDIUM  
 **Service:** `merchant-dashboard`  
@@ -240,7 +227,7 @@
 
 ---
 
-### Finding 15: Personal data stored but not referenced in any API or transfer
+### Finding 14: Personal data stored but not referenced in any API or transfer
 
 **Severity:** 🟡 MEDIUM  
 **Service:** `analytics-warehouse`  
@@ -255,7 +242,7 @@
 
 ---
 
-### Finding 16: Personal data stored but not referenced in any API or transfer
+### Finding 15: Personal data stored but not referenced in any API or transfer
 
 **Severity:** 🟡 MEDIUM  
 **Service:** `notification-service`  
@@ -270,7 +257,7 @@
 
 ---
 
-### Finding 17: Personal data stored but not referenced in any API or transfer
+### Finding 16: Personal data stored but not referenced in any API or transfer
 
 **Severity:** 🟡 MEDIUM  
 **Service:** `audit-log-service`  
@@ -285,7 +272,7 @@
 
 ---
 
-### Finding 18: Personal data stored but not referenced in any API or transfer
+### Finding 17: Personal data stored but not referenced in any API or transfer
 
 **Severity:** 🟡 MEDIUM  
 **Service:** `dispute-management`  
