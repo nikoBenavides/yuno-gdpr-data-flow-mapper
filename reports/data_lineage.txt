@@ -1,10 +1,26 @@
 Data Flow Lineage (ASCII)
 ============================================================
-Legend: --> (EU transfer)  ~~> (cross-border, no safeguard)  ..> (cross-border, SCC)
+Legend: --> (intra-EU / adequate)  ~~> (cross-border, NO safeguard ⚠️)  ..> (cross-border, SCC)
+        [🔴 PAN/SAD]  [🟠 PII]  [⚫ general]
 
-  [payment-gateway-api]  -->  [tokenization-vault]  |  pan, card_expiry  |  cats: ['cardholder_pan']
-  [payment-gateway-api]  ~~> ⚠️  [fraud-engine]  |  email, ip_address, transaction_amount...  |  cats: ['pii', 'general']
-  [fraud-engine]  -->  [analytics-warehouse]  |  email, ip_address, transaction_amount...  |  cats: ['pii', 'general']
-  [notification-service]  ..>  [sendgrid-external]  |  email, full_name  |  cats: ['pii']
-  [merchant-onboarding]  -->  [kyc-provider-external]  |  owner_full_name, owner_dob, owner_national_id  |  cats: ['pii']
-  [dispute-management]  ~~> ⚠️  [card-network-visa]  |  full_name, email, billing_address...  |  cats: ['pii', 'general']
+── PAN / Cardholder Data Flows ──────────────────────────
+
+  🔴 [payment-gateway-api]  -->  [tokenization-vault]
+     fields: pan, card_expiry  [plaintext ⚠️]
+
+── PII / Other Flows ────────────────────────────────────
+
+  🟠 [payment-gateway-api]  ~~> ⚠️  [fraud-engine] [cross-border → us-east-1, safeguard: NONE]
+     fields: email, ip_address, transaction_amount...
+
+  🟠 [fraud-engine]  -->  [analytics-warehouse]
+     fields: email, ip_address, transaction_amount...
+
+  🟠 [notification-service]  ..>  [sendgrid-external] [cross-border → us-east-1, safeguard: scc]
+     fields: email, full_name
+
+  🟠 [merchant-onboarding]  -->  [kyc-provider-external]
+     fields: owner_full_name, owner_dob, owner_national_id
+
+  🟠 [dispute-management]  ~~> ⚠️  [card-network-visa] [cross-border → us-east-1, safeguard: NONE]
+     fields: full_name, email, billing_address...

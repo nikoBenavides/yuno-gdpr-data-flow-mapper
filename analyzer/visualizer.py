@@ -53,20 +53,40 @@ def generate_ascii_lineage(flows: list[DataFlow]) -> str:
     lines = [
         "Data Flow Lineage (ASCII)",
         "=" * 60,
-        "Legend: --> (EU transfer)  ~~> (cross-border, no safeguard)  ..> (cross-border, SCC)",
+        "Legend: --> (intra-EU / adequate)  ~~> (cross-border, NO safeguard ⚠️)  ..> (cross-border, SCC)",
+        "        [🔴 PAN/SAD]  [🟠 PII]  [⚫ general]",
         "",
     ]
-    for f in flows:
-        if not f.crosses_border:
-            arrow = "-->"
-        elif f.safeguard in ("scc", "adequacy_decision"):
-            arrow = "..>"
-        else:
-            arrow = "~~> ⚠️"
 
-        cats = [c.value for c in f.data_categories]
-        field_str = ", ".join(f.fields[:3]) + ("..." if len(f.fields) > 3 else "")
-        lines.append(
-            f"  [{f.from_service}]  {arrow}  [{f.to_service}]  |  {field_str}  |  cats: {cats}"
-        )
+    # PAN lineage highlight — show the specific chain the challenge asks for
+    pan_flows = [f for f in flows if DataCategory.CARDHOLDER_PAN in f.data_categories]
+    if pan_flows:
+        lines += ["── PAN / Cardholder Data Flows ──────────────────────────", ""]
+        for f in pan_flows:
+            arrow = "~~> ⚠️" if (f.crosses_border and f.safeguard not in ("scc", "adequacy_decision")) else "-->"
+            enc_note = "[encrypted]" if any("encrypt" in x.lower() or "token" in x.lower() for x in f.fields) else "[plaintext ⚠️]"
+            border_note = f" [cross-border → {f.to_region}]" if f.crosses_border else ""
+            field_str = ", ".join(f.fields[:3]) + ("..." if len(f.fields) > 3 else "")
+            lines.append(f"  🔴 [{f.from_service}]  {arrow}  [{f.to_service}]{border_note}")
+            lines.append(f"     fields: {field_str}  {enc_note}")
+            lines.append("")
+
+    # All other flows
+    other_flows = [f for f in flows if DataCategory.CARDHOLDER_PAN not in f.data_categories]
+    if other_flows:
+        lines += ["── PII / Other Flows ────────────────────────────────────", ""]
+        for f in other_flows:
+            if not f.crosses_border:
+                arrow = "-->"
+            elif f.safeguard in ("scc", "adequacy_decision"):
+                arrow = "..>"
+            else:
+                arrow = "~~> ⚠️"
+            icon = "🟠" if DataCategory.PII in f.data_categories else "⚫"
+            border_note = f" [cross-border → {f.to_region}, safeguard: {f.safeguard or 'NONE'}]" if f.crosses_border else ""
+            field_str = ", ".join(f.fields[:3]) + ("..." if len(f.fields) > 3 else "")
+            lines.append(f"  {icon} [{f.from_service}]  {arrow}  [{f.to_service}]{border_note}")
+            lines.append(f"     fields: {field_str}")
+            lines.append("")
+
     return "\n".join(lines)

@@ -30,7 +30,7 @@ The following services process data that may be associated with this customer:
 
 ## notification-service
 - **Region:** eu-west-1
-- **Data fields potentially held:** customer_id, email, phone_number, notification_preferences, last_notified_at
+- **Data fields potentially held:** customer_id, email, phone_number, notification_preferences, last_notified_at, date_of_birth, billing_address, full_name, ip_address
 - **Retention policy:** 2 years
 - **Lawful basis:** contract
 

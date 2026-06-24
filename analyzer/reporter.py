@@ -188,7 +188,8 @@ def generate_dsar_response(services: list[Service], customer_id: str) -> str:
     ]
     found_any = False
     for svc in services:
-        all_fields = [f for store in svc.data_stores for f in store.fields]
+        # Deduplicate fields across stores (same field may appear in postgres + s3)
+        all_fields = list(dict.fromkeys(f for store in svc.data_stores for f in store.fields))
         if "customer_id" in all_fields or "email" in all_fields:
             found_any = True
             lines += [
