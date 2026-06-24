@@ -30,31 +30,36 @@ class CVVStorageRule(ComplianceRule):
     framework = "PCI-DSS"
 
     def check(self, service: Service, all_services: list[Service]) -> list[Violation]:
-        violations = []
-        for store in service.data_stores:
-            sad_fields = [f for f in store.fields if f.lower() in SENSITIVE_AUTH_PATTERNS]
-            if sad_fields:
-                violations.append(Violation(
-                    rule_id=self.rule_id,
-                    severity=Severity.CRITICAL,
-                    service_id=service.service_id,
-                    title="Sensitive Authentication Data (CVV/PIN) stored post-authorization",
-                    description=(
-                        f"Service '{service.service_id}' stores sensitive authentication data "
-                        f"in {store.type}: {sad_fields}. PCI DSS explicitly forbids storing "
-                        f"CVV/CVC, PINs, or magnetic stripe data after transaction authorization, "
-                        f"even in encrypted form."
-                    ),
-                    regulatory_citation="PCI DSS v4.0 Requirement 3.2.1",
-                    remediation=(
-                        "Immediately delete CVV/PIN fields from all data stores. "
-                        "Authentication data may be held in memory only during the authorization "
-                        "transaction and must not be persisted. Implement a data purge job and "
-                        "verify with a QSA before next PCI audit."
-                    ),
-                    fields_affected=sad_fields,
-                ))
-        return violations
+        # Deduplicate across stores: one finding per service listing all affected stores
+        store_hits = {
+            store.type: [f for f in store.fields if f.lower() in SENSITIVE_AUTH_PATTERNS]
+            for store in service.data_stores
+        }
+        store_hits = {k: v for k, v in store_hits.items() if v}
+        if not store_hits:
+            return []
+
+        all_sad_fields = sorted({f for fields in store_hits.values() for f in fields})
+        stores_desc = ", ".join(f"{t} ({', '.join(f)})" for t, f in store_hits.items())
+        return [Violation(
+            rule_id=self.rule_id,
+            severity=Severity.CRITICAL,
+            service_id=service.service_id,
+            title="Sensitive Authentication Data (CVV/PIN) stored post-authorization",
+            description=(
+                f"Service '{service.service_id}' stores sensitive authentication data "
+                f"in: {stores_desc}. PCI DSS explicitly forbids storing CVV/CVC, PINs, "
+                f"or magnetic stripe data after transaction authorization, even if encrypted or hashed."
+            ),
+            regulatory_citation="PCI DSS v4.0 Requirement 3.2.1",
+            remediation=(
+                "Immediately delete CVV/PIN fields from all data stores. "
+                "Authentication data may be held in memory only during the authorization "
+                "transaction and must not be persisted. Implement a data purge job and "
+                "verify with a QSA before next PCI audit."
+            ),
+            fields_affected=all_sad_fields,
+        )]
 
 
 class MissingRetentionPolicyRule(ComplianceRule):

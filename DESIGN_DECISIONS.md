@@ -1,95 +1,62 @@
 # Design Decisions & Compliance Reasoning
 
-## Overview
+## 1. `pan_last4`: Not Cardholder Data, But Still Personal Data
 
-This document explains the interpretive choices made when translating GDPR and PCI DSS requirements into automated detection logic. These are the kinds of judgment calls that distinguish a compliance tool from a checklist executor.
+**Under PCI DSS — not sensitive.** Requirement 3.3 explicitly permits storing the last four digits of a PAN. It cannot reconstruct the full account number or initiate a transaction. The tool does not flag `pan_last4` as a PCI DSS violation.
 
----
+**Under GDPR — personal data.** Combined with `customer_id`, `email`, or `full_name` (all commonly co-stored), `pan_last4` is sufficient to identify a specific payment instrument belonging to a natural person under GDPR Article 4(1). The tool therefore classifies `pan_last4` as **PII under GDPR** for cross-border transfer analysis, retention checks, and DSAR scoping.
 
-## 1. Is `pan_last4` Cardholder Data? Is it Personal Data?
-
-**Two separate questions with different answers.**
-
-**Under PCI DSS — No.** PCI DSS v4.0 Requirement 3.3 explicitly permits storing the last four digits of a PAN. It cannot be used to reconstruct the full account number or initiate a transaction. The tool does not flag `pan_last4` as a PCI DSS violation.
-
-**Under GDPR — Yes.** `pan_last4` combined with `customer_id`, `email`, or `full_name` (all commonly stored alongside it) is sufficient to identify a specific payment instrument belonging to a natural person. GDPR Article 4(1) defines personal data as "any information relating to an identified or identifiable natural person." Combined with other stored fields, `pan_last4` meets this threshold. The tool therefore classifies `pan_last4` as **PII under GDPR** for cross-border transfer analysis, retention policy checks, and DSAR scoping — while correctly not treating it as cardholder data for PCI DSS purposes.
-
-This distinction matters for cross-border transfers: the `tokenization-vault → fraud-engine` transfer of `pan_last4` to `us-east-1` without SCCs is a **GDPR Article 46 violation**, even though it is not a PCI DSS violation.
-
-**Data minimization nuance**: if a service stores full encrypted PAN but exposes only `pan_last4` in its APIs, that is flagged as GDPR Article 5(1)(c) violation — the service should hold only a token + last4 and delegate PAN retrieval to the tokenization vault. The `tokenization-vault` itself is exempted from this rule because storing and managing encrypted PANs is its explicit documented purpose.
-
----
+This distinction matters: the `tokenization-vault → fraud-engine` transfer of `pan_last4` to `us-east-1` without SCCs is flagged as a **GDPR Article 46 violation**, even though it is not a PCI DSS violation. Same field, two different answers depending on the framework.
 
 ## 2. The Fraud Engine Retention Dilemma
 
-**Scenario**: `fraud-engine` retains `email` and `ip_address` for 3 years to train ML models.
+`fraud-engine` retains `email` and `ip_address` for 3 years to train ML models. Three frameworks conflict:
 
-This is the most genuinely ambiguous case in the dataset, sitting at the intersection of three requirements:
+- **GDPR Article 5(1)(e)**: keep only as long as necessary
+- **GDPR Article 5(1)(c)**: minimize — do fraud models need direct identifiers or just behavioral features?
+- **PCI DSS Requirement 10.7**: audit logs must be kept ≥ 1 year
 
-- **GDPR Article 5(1)(e)**: data kept no longer than necessary for the stated purpose
-- **GDPR Article 5(1)(c)**: data minimization — collect only what is necessary
-- **PCI DSS Requirement 10.7**: audit logs must be retained for at least 1 year
+**My judgment**: Flag as **MEDIUM with human review required** — not HIGH or CRITICAL. Reasoning:
 
-**My interpretation**: I flag this as **MEDIUM** (not HIGH or CRITICAL) and mark it `requires_human_review: true`. The reasoning:
+1. PCI DSS mandates 1-year minimum, so some retention is legally required.
+2. Retaining behavioral features (`transaction_amount`, `fraud_score`) for 3 years can be justified under GDPR Article 6(1)(f) legitimate interest with a documented LIA.
+3. **However**, `email` and `ip_address` are direct identifiers rarely necessary for ML training — pseudonymized features suffice. Three-year retention of these specific fields goes beyond Article 5(1)(c).
 
-1. A 1-year minimum for audit logs is mandated by PCI DSS — the service *must* retain some records.
-2. Retaining behavioral features (`transaction_amount`, `fraud_score`, `device_fingerprint`) for 3 years for ML training can be justified under GDPR Article 6(1)(f) legitimate interest, if a proper Legitimate Interest Assessment (LIA) is documented.
-3. **However**, direct identifiers — specifically `email` and `ip_address` — are rarely necessary for model training. Fraud models can be trained on pseudonymized behavioral features. Retaining these identifiers for 3 years goes beyond what is necessary under Article 5(1)(c).
-
-**Recommendation in the tool**: Pseudonymize/hash email and IP after 1 year (satisfying PCI minimum), retain behavioral features for ML training period, and document the LIA. I do not auto-fail this because the business may have a documented legal basis — the tool surfaces it for human review rather than generating a false positive.
-
----
+Remediation: pseudonymize email and IP after 1 year; retain behavioral features for the full ML window; document the LIA. The tool does not auto-fail because a valid business justification may exist — it surfaces the conflict for human review rather than generating a false positive.
 
 ## 3. CVV Storage: No Nuance
 
-**Decision: Any CVV/CVC/PIN field in any data store is CRITICAL, regardless of encryption.**
+**Decision: CRITICAL regardless of encryption or hashing.**
 
-PCI DSS Requirement 3.2.1 is unambiguous: sensitive authentication data (SAD) must not be stored after authorization is complete, *even if encrypted*. The standard's rationale is that encryption protects data at rest but does not remove the compliance obligation — the data should not exist post-authorization at all.
-
-I explicitly include `cvv_hash` (as seen in `3ds-auth-service`) as a violation. Some engineers assume hashing is sufficient because it's one-way. PCI DSS disagrees: the *presence* of CVV-derived data in storage is the violation, regardless of the cryptographic transformation applied. A hash can still be used for correlation attacks and represents a CDE-expanding data element.
-
----
+PCI DSS Requirement 3.2.1 is unambiguous — sensitive authentication data must not be stored post-authorization, even encrypted. I explicitly include `cvv_hash` (in `3ds-auth-service`) as a violation. Some engineers assume hashing is sufficient because it's one-way. PCI DSS disagrees: the *presence* of CVV-derived data in any store is the violation. A hash still expands CDE scope and enables correlation attacks.
 
 ## 4. Cross-Border Transfers: Adequacy vs. SCCs
 
-**Decision: The tool distinguishes between adequacy decisions, SCCs, and no safeguard — not all cross-border transfers are violations.**
+The tool distinguishes three states — not all cross-border transfers are violations:
 
-The `notification-service` transfers `email` to `sendgrid-external` in `us-east-1` with `safeguard: "scc"`. This is **not** flagged as a violation. Post-Schrems II, Standard Contractual Clauses (June 2021 version) remain a valid transfer mechanism for US transfers, provided a Transfer Impact Assessment (TIA) is completed. The tool does not flag SCC-covered transfers.
+- `safeguard: "scc"` → **not flagged** (e.g., `notification-service → sendgrid` is compliant post-Schrems II if SCCs + TIA are in place)
+- `safeguard: "adequacy_decision"` → **not flagged**
+- `safeguard: null` to non-adequate country → **HIGH**
 
-Transfers with `safeguard: null` to non-adequate countries are flagged as HIGH. The severity is HIGH rather than CRITICAL because (unlike CVV storage) the violation is potentially remediated retroactively by putting SCCs in place — whereas CVV data that was stored must be deleted and the CDE scope must be reassessed.
-
-The `dispute-management` service in `ap-southeast-1` (Singapore) is flagged because Singapore's PDPA is not an EU adequacy decision, and card network transfers (`card-network-visa`) carry significant EU PII with no documented safeguard.
-
----
+Severity is HIGH (not CRITICAL) because unlike CVV storage, the violation can be remediated retroactively by executing SCCs — no data needs to be deleted.
 
 ## 5. The Tokenization Vault Exception
 
-**Decision: `tokenization-vault` is exempted from the full-PAN data minimization rule.**
+`tokenization-vault` stores `pan_encrypted` and is explicitly **exempted** from the data minimization rule. Flagging a tokenization vault for storing PAN would be a false positive — equivalent to flagging a hospital for storing medical records. The correct audit question is CDE segmentation and access control, not whether the vault stores PAN. Context determines compliance.
 
-Storing encrypted PAN is the vault's entire purpose. Flagging it for "full PAN stored" would be a false positive — equivalent to flagging a hospital for "storing patient records." The correct question is whether the vault is properly segmented (CDE isolation) and access-controlled, not whether it stores PAN. The tool applies a domain-specific exception using service identity and the presence of `token` in stored fields.
+## 6. KYC Document Storage
 
----
+`merchant-onboarding` stores `id_document_scan`, `proof_of_address_scan`, and `bank_account_iban` which do not appear in any API endpoint. The tool exempts these from the "unused personal data" rule. They are outputs of the KYC processing workflow and are required for AML regulatory obligations (`legal_obligation` lawful basis) — not excessive collection. Flagging them would generate noise that undermines the credibility of the report.
 
-## 6. `analytics-warehouse`: Missing Lawful Basis
+## 7. Edge Cases and Privacy Awareness
 
-**Decision: Missing lawful basis for an analytics service is flagged as HIGH, not MEDIUM.**
-
-The `analytics-warehouse` has no documented lawful basis (`lawful_basis: null`). This is particularly concerning because the service is in `us-east-1` (already a cross-border transfer risk), stores `email`, `full_name`, and `pan_last4`, and its purpose appears to be business intelligence — not contractual necessity. Under GDPR Article 6, every processing activity requires a valid lawful basis. The absence of one for a service with significant personal data exposure warrants HIGH severity.
-
----
-
-## 7. Edge Cases and Graceful Degradation
-
-- **Missing fields in services.json**: The loader uses `.get()` with defaults throughout. Missing optional fields (description, owner, retention_policy) produce appropriate GDPR findings rather than crashes.
-- **Conflicting framework rules**: Where GDPR and PCI DSS conflict (primarily on audit log retention), the tool flags for human review with an explicit `conflict_note` in the violation output. Binary pass/fail is inappropriate here.
-- **The tool itself**: The compliance analyzer does not log, print, or write any raw PAN values. Report output redacts sensitive fields to field names only, never values. The tool operates on metadata schemas, not actual cardholder data.
-
----
+- **Missing fields**: Loader uses `.get()` throughout — missing `retention_policy`, `lawful_basis`, or `data_transfers` produce findings, not crashes.
+- **GDPR/PCI conflicts**: Where frameworks conflict (audit log retention vs. minimization), the tool emits a `conflict_note` and sets `requires_human_review: true`. Binary pass/fail is incorrect for regulatory ambiguity.
+- **Tool privacy**: The analyzer operates on schema metadata, never on actual cardholder values. Reports contain field names only — no PAN values, no CVV values, no raw PII.
 
 ## 8. What I'd Add With More Time
 
-1. **Graph traversal for indirect data flows**: Currently the tool checks direct `data_transfers`. A more sophisticated version would traverse the service graph to detect indirect flows (e.g., service A → service B → service C where C is non-adequate, even if A→C has no direct transfer).
-2. **Risk scoring aggregation**: Aggregate violation counts per service to produce a service-level risk score, enabling prioritization when remediating 10+ findings.
-3. **DSAR completeness verification**: The current DSAR simulation identifies services that *might* hold customer data based on stored field names. A production version would require service owners to attest to customer data presence and provide a record count.
-4. **SCCs version checking**: The June 2021 EU SCCs replaced the older 2010 versions (which expired in December 2022). A tool that detects `safeguard: "scc"` without verifying which version is used could miss compliance gaps.
-5. **PCI DSS CDE segmentation analysis**: Identify which services are in-scope for PCI DSS (the Cardholder Data Environment) and flag services that share network space without documented segmentation controls.
+1. **Indirect flow traversal**: Detect A → B → C cross-border chains even without a direct A→C transfer documented.
+2. **Service-level risk score**: Aggregate findings per service to produce a remediation priority queue.
+3. **SCC version validation**: Distinguish June 2021 SCCs (valid) from 2010 SCCs (expired December 2022).
+4. **CDE segmentation analysis**: Flag services that share network space with CDE services without documented isolation controls.

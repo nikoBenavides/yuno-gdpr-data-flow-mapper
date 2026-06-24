@@ -3,13 +3,13 @@
 
 ## Executive Summary
 
-**Total findings:** 19  
-**Requires immediate action (Critical + High):** 11  
+**Total findings:** 18  
+**Requires immediate action (Critical + High):** 10  
 **Requires human review (regulatory ambiguity):** 1  
 
 | Severity | Count |
 |----------|-------|
-| 🔴 CRITICAL | 4 |
+| 🔴 CRITICAL | 3 |
 | 🟠 HIGH | 7 |
 | 🟡 MEDIUM | 8 |
 | 🟢 LOW | 0 |
@@ -37,7 +37,7 @@
 **Rule ID:** `PCI-3.2-SAD-STORAGE`  
 **Regulatory Citation:** PCI DSS v4.0 Requirement 3.2.1  
 
-**Description:** Service 'payment-gateway-api' stores sensitive authentication data in postgres: ['cvv_encrypted']. PCI DSS explicitly forbids storing CVV/CVC, PINs, or magnetic stripe data after transaction authorization, even in encrypted form.
+**Description:** Service 'payment-gateway-api' stores sensitive authentication data in: postgres (cvv_encrypted). PCI DSS explicitly forbids storing CVV/CVC, PINs, or magnetic stripe data after transaction authorization, even if encrypted or hashed.
 
 **Remediation:** Immediately delete CVV/PIN fields from all data stores. Authentication data may be held in memory only during the authorization transaction and must not be persisted. Implement a data purge job and verify with a QSA before next PCI audit.
 
@@ -52,7 +52,7 @@
 **Rule ID:** `PCI-3.2-SAD-STORAGE`  
 **Regulatory Citation:** PCI DSS v4.0 Requirement 3.2.1  
 
-**Description:** Service '3ds-auth-service' stores sensitive authentication data in redis: ['cvv_hash']. PCI DSS explicitly forbids storing CVV/CVC, PINs, or magnetic stripe data after transaction authorization, even in encrypted form.
+**Description:** Service '3ds-auth-service' stores sensitive authentication data in: redis (cvv_hash), postgres (cvv_hash). PCI DSS explicitly forbids storing CVV/CVC, PINs, or magnetic stripe data after transaction authorization, even if encrypted or hashed.
 
 **Remediation:** Immediately delete CVV/PIN fields from all data stores. Authentication data may be held in memory only during the authorization transaction and must not be persisted. Implement a data purge job and verify with a QSA before next PCI audit.
 
@@ -60,22 +60,7 @@
 
 ---
 
-### Finding 3: Sensitive Authentication Data (CVV/PIN) stored post-authorization
-
-**Severity:** 🔴 CRITICAL  
-**Service:** `3ds-auth-service`  
-**Rule ID:** `PCI-3.2-SAD-STORAGE`  
-**Regulatory Citation:** PCI DSS v4.0 Requirement 3.2.1  
-
-**Description:** Service '3ds-auth-service' stores sensitive authentication data in postgres: ['cvv_hash']. PCI DSS explicitly forbids storing CVV/CVC, PINs, or magnetic stripe data after transaction authorization, even in encrypted form.
-
-**Remediation:** Immediately delete CVV/PIN fields from all data stores. Authentication data may be held in memory only during the authorization transaction and must not be persisted. Implement a data purge job and verify with a QSA before next PCI audit.
-
-**Affected Fields:** `cvv_hash`  
-
----
-
-### Finding 4: Full PAN present in log/search store
+### Finding 3: Full PAN present in log/search store
 
 **Severity:** 🔴 CRITICAL  
 **Service:** `audit-log-service`  
@@ -92,7 +77,7 @@
 
 ---
 
-### Finding 5: Unlawful cross-border transfer: EU → us-east-1 (fraud-engine)
+### Finding 4: Unlawful cross-border transfer: EU → us-east-1 (fraud-engine)
 
 **Severity:** 🟠 HIGH  
 **Service:** `payment-gateway-api`  
@@ -107,7 +92,7 @@
 
 ---
 
-### Finding 6: Unlawful cross-border transfer: EU → us-east-1 (fraud-engine)
+### Finding 5: Unlawful cross-border transfer: EU → us-east-1 (fraud-engine)
 
 **Severity:** 🟠 HIGH  
 **Service:** `tokenization-vault`  
@@ -122,7 +107,7 @@
 
 ---
 
-### Finding 7: Non-EU service (us-east-1) holds EU personal data without SCCs
+### Finding 6: Non-EU service (us-east-1) holds EU personal data without SCCs
 
 **Severity:** 🟠 HIGH  
 **Service:** `fraud-engine`  
@@ -137,7 +122,7 @@
 
 ---
 
-### Finding 8: No retention policy defined for personal data
+### Finding 7: No retention policy defined for personal data
 
 **Severity:** 🟠 HIGH  
 **Service:** `merchant-dashboard`  
@@ -152,7 +137,7 @@
 
 ---
 
-### Finding 9: Cardholder data stored without retention policy
+### Finding 8: Cardholder data stored without retention policy
 
 **Severity:** 🟠 HIGH  
 **Service:** `merchant-dashboard`  
@@ -165,7 +150,7 @@
 
 ---
 
-### Finding 10: No retention policy defined for personal data
+### Finding 9: No retention policy defined for personal data
 
 **Severity:** 🟠 HIGH  
 **Service:** `analytics-warehouse`  
@@ -180,7 +165,7 @@
 
 ---
 
-### Finding 11: No valid lawful basis documented for personal data processing
+### Finding 10: No valid lawful basis documented for personal data processing
 
 **Severity:** 🟠 HIGH  
 **Service:** `analytics-warehouse`  
@@ -193,7 +178,7 @@
 
 ---
 
-### Finding 12: Personal data stored but not referenced in any API or transfer
+### Finding 11: Personal data stored but not referenced in any API or transfer
 
 **Severity:** 🟡 MEDIUM  
 **Service:** `payment-gateway-api`  
@@ -208,7 +193,7 @@
 
 ---
 
-### Finding 13: Direct identifiers retained 3 years in fraud/ML store — GDPR/PCI conflict ⚠️ **HUMAN REVIEW REQUIRED**
+### Finding 12: Direct identifiers retained 3 years in fraud/ML store — GDPR/PCI conflict ⚠️ **HUMAN REVIEW REQUIRED**
 
 **Severity:** 🟡 MEDIUM  
 **Service:** `fraud-engine`  
@@ -225,7 +210,7 @@
 
 ---
 
-### Finding 14: Full PAN stored but only last-4 digits exposed — data minimization failure
+### Finding 13: Full PAN stored but only last-4 digits exposed — data minimization failure
 
 **Severity:** 🟡 MEDIUM  
 **Service:** `merchant-dashboard`  
@@ -240,7 +225,7 @@
 
 ---
 
-### Finding 15: Personal data stored but not referenced in any API or transfer
+### Finding 14: Personal data stored but not referenced in any API or transfer
 
 **Severity:** 🟡 MEDIUM  
 **Service:** `merchant-dashboard`  
@@ -255,7 +240,7 @@
 
 ---
 
-### Finding 16: Personal data stored but not referenced in any API or transfer
+### Finding 15: Personal data stored but not referenced in any API or transfer
 
 **Severity:** 🟡 MEDIUM  
 **Service:** `analytics-warehouse`  
@@ -270,7 +255,7 @@
 
 ---
 
-### Finding 17: Personal data stored but not referenced in any API or transfer
+### Finding 16: Personal data stored but not referenced in any API or transfer
 
 **Severity:** 🟡 MEDIUM  
 **Service:** `notification-service`  
@@ -285,7 +270,7 @@
 
 ---
 
-### Finding 18: Personal data stored but not referenced in any API or transfer
+### Finding 17: Personal data stored but not referenced in any API or transfer
 
 **Severity:** 🟡 MEDIUM  
 **Service:** `audit-log-service`  
@@ -300,7 +285,7 @@
 
 ---
 
-### Finding 19: Personal data stored but not referenced in any API or transfer
+### Finding 18: Personal data stored but not referenced in any API or transfer
 
 **Severity:** 🟡 MEDIUM  
 **Service:** `dispute-management`  
