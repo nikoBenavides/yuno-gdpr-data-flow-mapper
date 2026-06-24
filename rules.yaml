@@ -3,6 +3,22 @@
 # Conditions are ANDed together.
 
 rules:
+  # Exact example from the challenge spec:
+  # "flag any service in US processing EU PII without SCCs"
+  - id: CUSTOM-US-SERVICE-EU-PII-NO-SCC
+    framework: GDPR
+    title: "Service in US receives EU PII without Standard Contractual Clauses"
+    severity: HIGH
+    conditions:
+      service_in_regions_receiving_eu_pii_without_scc:
+        - us-east-1
+        - us-west-1
+        - us-west-2
+        - us-east-2
+    description: "Service '{service_id}' is located in the US and receives EU personal data without Standard Contractual Clauses. Post-Schrems II, US transfers require SCCs + Transfer Impact Assessment."
+    citation: "GDPR Article 46; Schrems II ruling (C-311/18, 2020)"
+    remediation: "Implement EU SCCs (June 2021 version) with all EU senders. Conduct a Transfer Impact Assessment (TIA). Consider EU data residency as an alternative."
+
   - id: CUSTOM-LATAM-PII-NO-SCC
     framework: GDPR
     title: "PII transferred to LatAm region without SCC safeguard"

@@ -176,36 +176,97 @@ def generate_risk_report_markdown(violations: list[Violation], flows: list[DataF
     return "\n".join(lines)
 
 
+# Fields that link a record to a specific customer (used to determine DSAR scope)
+CUSTOMER_IDENTIFIER_FIELDS = {"customer_id", "email", "phone_number", "full_name"}
+
+# Fields that are personal data a subject has the right to receive under GDPR Art. 15
+PERSONAL_DATA_FIELDS = {
+    "email", "full_name", "first_name", "last_name", "phone_number",
+    "billing_address", "ip_address", "date_of_birth", "pan_last4",
+    "notification_preferences", "transaction_history", "dispute_evidence",
+    "fraud_score", "device_fingerprint",
+}
+
+
 def generate_dsar_response(services: list[Service], customer_id: str) -> str:
-    """Stretch goal 5: DSAR simulation — find all data held about a customer."""
+    """
+    DSAR simulation (GDPR Article 15).
+
+    Identifies every service that stores customer-linked fields, then lists:
+    - Which personal data fields it holds (what the subject can request a copy of)
+    - Which fields are sensitive/restricted (must be redacted in the DSAR response)
+    - Retention policy and lawful basis (required disclosures under Art. 15(1))
+
+    Limitation: this is a schema-level scan. It proves a service *can* hold data
+    for this customer_id, not that it *does*. Service owners must confirm before
+    responding to the actual DSAR.
+    """
     lines = [
-        f"# Data Subject Access Request Response",
+        "# GDPR Data Subject Access Request — Scoping Report",
         f"*Subject Customer ID: `{customer_id}`*",
-        f"*Generated: {date.today().isoformat()}*",
+        f"*Generated: {date.today().isoformat()} | Must respond within 30 days (GDPR Art. 15)*",
         "",
-        "The following services process data that may be associated with this customer:",
+        "## Scope",
+        "",
+        "This report identifies every service whose schema contains customer-linked fields.",
+        "**Action required:** Each service owner must confirm whether a record for",
+        f"`{customer_id}` exists and provide the actual data for the DSAR response.",
+        "",
+        "---",
         "",
     ]
+
     found_any = False
     for svc in services:
-        # Deduplicate fields across stores (same field may appear in postgres + s3)
         all_fields = list(dict.fromkeys(f for store in svc.data_stores for f in store.fields))
-        if "customer_id" in all_fields or "email" in all_fields:
-            found_any = True
-            lines += [
-                f"## {svc.service_id}",
-                f"- **Region:** {svc.region}",
-                f"- **Data fields potentially held:** {', '.join(all_fields)}",
-                f"- **Retention policy:** {svc.retention_policy or 'Not documented'}",
-                f"- **Lawful basis:** {svc.lawful_basis or 'Not documented'}",
-                "",
-            ]
+        # Only include services that store a field that could link to this customer
+        if not any(f in CUSTOMER_IDENTIFIER_FIELDS for f in all_fields):
+            continue
+
+        found_any = True
+        disclosable = [f for f in all_fields if f in PERSONAL_DATA_FIELDS]
+        sensitive = [f for f in all_fields if any(
+            kw in f.lower() for kw in ("pan_encrypted", "cvv", "pin", "token", "encrypted")
+        )]
+        cross_border = [
+            f"{t.to_service} ({t.to_region})" for t in svc.data_transfers
+            if any(f in PERSONAL_DATA_FIELDS for f in t.fields)
+        ]
+
+        lines += [
+            f"## {svc.service_id}",
+            "",
+            f"| Attribute | Value |",
+            f"|-----------|-------|",
+            f"| Region | {svc.region} |",
+            f"| Lawful Basis | {svc.lawful_basis or '⚠️ Not documented'} |",
+            f"| Retention | {svc.retention_policy or '⚠️ Not documented'} |",
+            "",
+            f"**Data disclosable to subject (Art. 15):** "
+            f"{', '.join(disclosable) if disclosable else 'None identified'}",
+            "",
+        ]
+        if sensitive:
+            lines.append(
+                f"**Sensitive fields (redact from DSAR response):** {', '.join(sensitive)}"
+            )
+            lines.append("")
+        if cross_border:
+            lines.append(
+                f"**Subject's data transferred to:** {'; '.join(cross_border)} "
+                f"*(must disclose recipients under Art. 15(1)(c))*"
+            )
+            lines.append("")
+        lines.append("---")
+        lines.append("")
+
     if not found_any:
-        lines.append("No services identified as processing data for this customer.")
+        lines.append(f"No services identified as processing data for customer `{customer_id}`.")
+
     lines += [
-        "---",
-        "> **Note:** This is an automated scan based on service metadata. "
-        "A manual review by service owners is required to confirm actual data held "
-        "for the specific customer ID before responding to the DSAR.",
+        "> **Legal Note:** This automated report covers schema-level scope only.",
+        "> Before sending the DSAR response, each service owner must attest to the",
+        "> presence/absence of a record for this customer and provide actual field values.",
+        "> CVV, full PAN, and encrypted fields must never be included in DSAR responses.",
     ]
     return "\n".join(lines)

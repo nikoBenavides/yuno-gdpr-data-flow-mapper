@@ -3,14 +3,14 @@
 
 ## Executive Summary
 
-**Total findings:** 21  
-**Requires immediate action (Critical + High):** 10  
+**Total findings:** 22  
+**Requires immediate action (Critical + High):** 11  
 **Requires human review (regulatory ambiguity):** 1  
 
 | Severity | Count |
 |----------|-------|
 | 🔴 CRITICAL | 4 |
-| 🟠 HIGH | 6 |
+| 🟠 HIGH | 7 |
 | 🟡 MEDIUM | 11 |
 | 🟢 LOW | 0 |
 | ℹ️  INFO | 0 |
@@ -122,7 +122,20 @@
 
 ---
 
-### Finding 7: No retention policy defined for personal data
+### Finding 7: Service in US receives EU PII without Standard Contractual Clauses
+
+**Severity:** 🟠 HIGH  
+**Service:** `fraud-engine`  
+**Rule ID:** `CUSTOM-US-SERVICE-EU-PII-NO-SCC`  
+**Regulatory Citation:** GDPR Article 46; Schrems II ruling (C-311/18, 2020)  
+
+**Description:** Service 'fraud-engine' is located in the US and receives EU personal data without Standard Contractual Clauses. Post-Schrems II, US transfers require SCCs + Transfer Impact Assessment.
+
+**Remediation:** Implement EU SCCs (June 2021 version) with all EU senders. Conduct a Transfer Impact Assessment (TIA). Consider EU data residency as an alternative.
+
+---
+
+### Finding 8: No retention policy defined for personal data
 
 **Severity:** 🟠 HIGH  
 **Service:** `merchant-dashboard`  
@@ -137,7 +150,7 @@
 
 ---
 
-### Finding 8: Cardholder data stored without retention policy
+### Finding 9: Cardholder data stored without retention policy
 
 **Severity:** 🟠 HIGH  
 **Service:** `merchant-dashboard`  
@@ -150,7 +163,7 @@
 
 ---
 
-### Finding 9: No retention policy defined for personal data
+### Finding 10: No retention policy defined for personal data
 
 **Severity:** 🟠 HIGH  
 **Service:** `analytics-warehouse`  
@@ -165,7 +178,7 @@
 
 ---
 
-### Finding 10: No valid lawful basis documented for personal data processing
+### Finding 11: No valid lawful basis documented for personal data processing
 
 **Severity:** 🟠 HIGH  
 **Service:** `analytics-warehouse`  
@@ -178,7 +191,7 @@
 
 ---
 
-### Finding 11: Personal data stored but not referenced in any API or transfer
+### Finding 12: Personal data stored but not referenced in any API or transfer
 
 **Severity:** 🟡 MEDIUM  
 **Service:** `payment-gateway-api`  
@@ -193,7 +206,7 @@
 
 ---
 
-### Finding 12: Personal data stored but not referenced in any API or transfer
+### Finding 13: Personal data stored but not referenced in any API or transfer
 
 **Severity:** 🟡 MEDIUM  
 **Service:** `tokenization-vault`  
@@ -208,7 +221,7 @@
 
 ---
 
-### Finding 13: Direct identifiers retained 3 years in fraud/ML store — GDPR/PCI conflict ⚠️ **HUMAN REVIEW REQUIRED**
+### Finding 14: Direct identifiers retained 3 years in fraud/ML store — GDPR/PCI conflict ⚠️ **HUMAN REVIEW REQUIRED**
 
 **Severity:** 🟡 MEDIUM  
 **Service:** `fraud-engine`  
@@ -225,7 +238,7 @@
 
 ---
 
-### Finding 14: Full PAN stored but only last-4 digits exposed — data minimization failure
+### Finding 15: Full PAN stored but only last-4 digits exposed — data minimization failure
 
 **Severity:** 🟡 MEDIUM  
 **Service:** `merchant-dashboard`  
@@ -240,7 +253,7 @@
 
 ---
 
-### Finding 15: Personal data stored but not referenced in any API or transfer
+### Finding 16: Personal data stored but not referenced in any API or transfer
 
 **Severity:** 🟡 MEDIUM  
 **Service:** `merchant-dashboard`  
@@ -255,7 +268,7 @@
 
 ---
 
-### Finding 16: Personal data stored but not referenced in any API or transfer
+### Finding 17: Personal data stored but not referenced in any API or transfer
 
 **Severity:** 🟡 MEDIUM  
 **Service:** `analytics-warehouse`  
@@ -270,7 +283,7 @@
 
 ---
 
-### Finding 17: Personal data stored but not referenced in any API or transfer
+### Finding 18: Personal data stored but not referenced in any API or transfer
 
 **Severity:** 🟡 MEDIUM  
 **Service:** `notification-service`  
@@ -285,7 +298,7 @@
 
 ---
 
-### Finding 18: Personal data stored but not referenced in any API or transfer
+### Finding 19: Personal data stored but not referenced in any API or transfer
 
 **Severity:** 🟡 MEDIUM  
 **Service:** `merchant-onboarding`  
@@ -300,7 +313,7 @@
 
 ---
 
-### Finding 19: Personal data stored but not referenced in any API or transfer
+### Finding 20: Personal data stored but not referenced in any API or transfer
 
 **Severity:** 🟡 MEDIUM  
 **Service:** `3ds-auth-service`  
@@ -315,7 +328,7 @@
 
 ---
 
-### Finding 20: Full PAN stored but only last-4 digits exposed — data minimization failure
+### Finding 21: Full PAN stored but only last-4 digits exposed — data minimization failure
 
 **Severity:** 🟡 MEDIUM  
 **Service:** `audit-log-service`  
@@ -330,7 +343,7 @@
 
 ---
 
-### Finding 21: Personal data stored but not referenced in any API or transfer
+### Finding 22: Personal data stored but not referenced in any API or transfer
 
 **Severity:** 🟡 MEDIUM  
 **Service:** `audit-log-service`  

@@ -50,7 +50,7 @@ class YamlRule(ComplianceRule):
             if getattr(service, attr, "PRESENT") is not None:
                 return []
 
-        # Condition: transfers to specific regions without safeguard
+        # Condition: transfers to specific regions without safeguard (outbound)
         if "transfer_to_region_without_safeguard" in conditions:
             target_regions = conditions["transfer_to_region_without_safeguard"]
             matched_transfers = [
@@ -58,6 +58,27 @@ class YamlRule(ComplianceRule):
                 if t.to_region in target_regions and not t.safeguard
             ]
             if not matched_transfers:
+                return []
+
+        # Condition: "flag any service in US/non-EU processing EU PII without SCCs"
+        # Checks if this service is in a target region AND receives EU PII without safeguard
+        if "service_in_regions_receiving_eu_pii_without_scc" in conditions:
+            target_regions = conditions["service_in_regions_receiving_eu_pii_without_scc"]
+            if service.region not in target_regions:
+                return []
+            eu_regions = {"eu-west-1", "eu-west-2", "eu-west-3", "eu-central-1", "eu-north-1", "eu-south-1"}
+            has_unsafeguarded_eu_pii = any(
+                sender.region in eu_regions
+                and t.to_service == service.service_id
+                and not t.safeguard
+                and any(
+                    classify_fields([f]).get(DataCategory.PII)
+                    for f in t.fields
+                )
+                for sender in all_services
+                for t in sender.data_transfers
+            )
+            if not has_unsafeguarded_eu_pii:
                 return []
 
         severity = Severity(rule.get("severity", "MEDIUM").upper())
