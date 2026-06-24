@@ -64,7 +64,14 @@
     ],
     "retention_policy": "10 years",
     "lawful_basis": "contract",
-    "data_transfers": []
+    "data_transfers": [
+      {
+        "to_service": "fraud-engine",
+        "to_region": "us-east-1",
+        "fields": ["token", "pan_last4", "card_scheme"],
+        "safeguard": null
+      }
+    ]
   },
   {
     "service_id": "fraud-engine",
@@ -94,7 +101,7 @@
       {
         "to_service": "analytics-warehouse",
         "to_region": "us-east-1",
-        "fields": ["email", "ip_address", "transaction_amount", "fraud_score"],
+        "fields": ["pan_last4", "email", "ip_address", "transaction_amount", "fraud_score"],
         "safeguard": null
       }
     ]

@@ -22,6 +22,7 @@
 | Source | Destination | Region | Fields | Safeguard |
 |--------|-------------|--------|--------|-----------|
 | payment-gateway-api | fraud-engine | us-east-1 | email, ip_address, transaction_amount... | ⚠️ NONE |
+| tokenization-vault | fraud-engine | us-east-1 | token, pan_last4, card_scheme | ⚠️ NONE |
 | notification-service | sendgrid-external | us-east-1 | email, full_name | scc |
 | dispute-management | card-network-visa | us-east-1 | full_name, email, billing_address... | ⚠️ NONE |
 
@@ -113,11 +114,11 @@
 **Rule ID:** `GDPR-46-RECEIVING-NON-EU`  
 **Regulatory Citation:** GDPR Article 44-46, Chapter V  
 
-**Description:** Service 'fraud-engine' is located in us-east-1 (non-adequate) and receives EU personal data: ['email', 'ip_address', 'merchant_id', 'transaction_amount']. No transfer safeguard is documented for incoming EU data flows.
+**Description:** Service 'fraud-engine' is located in us-east-1 (non-adequate) and receives EU personal data: ['card_scheme', 'email', 'ip_address', 'merchant_id', 'pan_last4', 'token', 'transaction_amount']. No transfer safeguard is documented for incoming EU data flows.
 
 **Remediation:** Either: (a) migrate 'fraud-engine' to an EU/adequate region, (b) implement SCCs with all EU senders, or (c) pseudonymize data before transfer so it no longer qualifies as personal data.
 
-**Affected Fields:** `email`, `ip_address`, `merchant_id`, `transaction_amount`  
+**Affected Fields:** `card_scheme`, `email`, `ip_address`, `merchant_id`, `pan_last4`, `token`, `transaction_amount`  
 
 ---
 

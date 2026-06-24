@@ -30,7 +30,7 @@
 | **Region** | eu-west-1 |
 | **Lawful Basis** | contract |
 | **Retention Policy** | 10 years |
-| **Cross-Border Transfers** | None |
+| **Cross-Border Transfers** | fraud-engine (us-east-1) [⚠️ NO SAFEGUARD] |
 
 **Data Categories Processed:**
 
