@@ -4,14 +4,14 @@
 ## Executive Summary
 
 **Total findings:** 22  
-**Requires immediate action (Critical + High):** 11  
+**Requires immediate action (Critical + High):** 12  
 **Requires human review (regulatory ambiguity):** 1  
 
 | Severity | Count |
 |----------|-------|
 | 🔴 CRITICAL | 4 |
-| 🟠 HIGH | 7 |
-| 🟡 MEDIUM | 11 |
+| 🟠 HIGH | 8 |
+| 🟡 MEDIUM | 10 |
 | 🟢 LOW | 0 |
 | ℹ️  INFO | 0 |
 
@@ -107,7 +107,22 @@
 
 ---
 
-### Finding 6: Non-EU service (us-east-1) holds EU personal data without documented safeguards
+### Finding 6: Unlawful cross-border transfer: EU → us-east-1 (fraud-engine)
+
+**Severity:** 🟠 HIGH  
+**Service:** `tokenization-vault`  
+**Rule ID:** `GDPR-46-CROSS-BORDER`  
+**Regulatory Citation:** GDPR Article 46, Chapter V; Schrems II (C-311/18)  
+
+**Description:** Service 'tokenization-vault' (EU: eu-west-1) transfers personal data ['pan_last4'] to 'fraud-engine' in us-east-1, which is not an adequate country under GDPR. No valid transfer safeguard (SCC, BCR, adequacy decision) is documented.
+
+**Remediation:** Implement Standard Contractual Clauses (EU SCCs, June 2021 version) with 'fraud-engine'. Conduct a Transfer Impact Assessment (TIA) for transfers to the US given Schrems II. Alternatively, consider migrating the receiving service to an EU region.
+
+**Affected Fields:** `pan_last4`  
+
+---
+
+### Finding 7: Non-EU service (us-east-1) holds EU personal data without documented safeguards
 
 **Severity:** 🟠 HIGH  
 **Service:** `fraud-engine`  
@@ -122,7 +137,7 @@
 
 ---
 
-### Finding 7: Service in US receives EU PII without Standard Contractual Clauses
+### Finding 8: Service in US receives EU PII without Standard Contractual Clauses
 
 **Severity:** 🟠 HIGH  
 **Service:** `fraud-engine`  
@@ -135,22 +150,22 @@
 
 ---
 
-### Finding 8: No retention policy defined for personal data
+### Finding 9: No retention policy defined for personal data
 
 **Severity:** 🟠 HIGH  
 **Service:** `merchant-dashboard`  
 **Rule ID:** `GDPR-5.1e-RETENTION`  
 **Regulatory Citation:** GDPR Article 5(1)(e), Article 30(1)(f)  
 
-**Description:** Service 'merchant-dashboard' stores personal data ['customer_id', 'email', 'billing_address', 'full_name', 'pan_encrypted'] but has no documented retention policy. Under GDPR Article 5(1)(e), personal data must be deleted when no longer necessary for its purpose.
+**Description:** Service 'merchant-dashboard' stores personal data ['customer_id', 'pan_last4', 'email', 'billing_address', 'full_name', 'pan_encrypted'] but has no documented retention policy. Under GDPR Article 5(1)(e), personal data must be deleted when no longer necessary for its purpose.
 
 **Remediation:** Define and document a retention period justified by the lawful basis (e.g., contract duration + statutory limitation period, or regulatory minimum). Implement automated deletion or anonymization at end of period. Add retention_policy to your Article 30 register.
 
-**Affected Fields:** `customer_id`, `email`, `billing_address`, `full_name`, `pan_encrypted`  
+**Affected Fields:** `customer_id`, `pan_last4`, `email`, `billing_address`, `full_name`, `pan_encrypted`  
 
 ---
 
-### Finding 9: Cardholder data stored without retention policy
+### Finding 10: Cardholder data stored without retention policy
 
 **Severity:** 🟠 HIGH  
 **Service:** `merchant-dashboard`  
@@ -163,22 +178,22 @@
 
 ---
 
-### Finding 10: No retention policy defined for personal data
+### Finding 11: No retention policy defined for personal data
 
 **Severity:** 🟠 HIGH  
 **Service:** `analytics-warehouse`  
 **Rule ID:** `GDPR-5.1e-RETENTION`  
 **Regulatory Citation:** GDPR Article 5(1)(e), Article 30(1)(f)  
 
-**Description:** Service 'analytics-warehouse' stores personal data ['customer_id', 'email', 'ip_address', 'full_name'] but has no documented retention policy. Under GDPR Article 5(1)(e), personal data must be deleted when no longer necessary for its purpose.
+**Description:** Service 'analytics-warehouse' stores personal data ['customer_id', 'email', 'ip_address', 'pan_last4', 'full_name'] but has no documented retention policy. Under GDPR Article 5(1)(e), personal data must be deleted when no longer necessary for its purpose.
 
 **Remediation:** Define and document a retention period justified by the lawful basis (e.g., contract duration + statutory limitation period, or regulatory minimum). Implement automated deletion or anonymization at end of period. Add retention_policy to your Article 30 register.
 
-**Affected Fields:** `customer_id`, `email`, `ip_address`, `full_name`  
+**Affected Fields:** `customer_id`, `email`, `ip_address`, `pan_last4`, `full_name`  
 
 ---
 
-### Finding 11: No valid lawful basis documented for personal data processing
+### Finding 12: No valid lawful basis documented for personal data processing
 
 **Severity:** 🟠 HIGH  
 **Service:** `analytics-warehouse`  
@@ -191,33 +206,18 @@
 
 ---
 
-### Finding 12: Personal data stored but not referenced in any API or transfer
+### Finding 13: Personal data stored but not referenced in any API or transfer
 
 **Severity:** 🟡 MEDIUM  
 **Service:** `payment-gateway-api`  
 **Rule ID:** `GDPR-5.1c-MINIMIZATION-UNUSED`  
 **Regulatory Citation:** GDPR Article 5(1)(c) — data minimization  
 
-**Description:** Service 'payment-gateway-api' stores personal fields ['billing_address', 'pan_encrypted'] that do not appear in any API endpoint or outbound data transfer. This suggests excessive collection with no clear purpose.
+**Description:** Service 'payment-gateway-api' stores personal fields ['billing_address'] that do not appear in any API endpoint or outbound data transfer. This suggests excessive collection with no clear purpose.
 
 **Remediation:** Review whether these fields serve a documented purpose. If not, remove them from the data store schema. If they serve an undocumented purpose (e.g., internal analytics), document the lawful basis and purpose limitation.
 
-**Affected Fields:** `billing_address`, `pan_encrypted`  
-
----
-
-### Finding 13: Personal data stored but not referenced in any API or transfer
-
-**Severity:** 🟡 MEDIUM  
-**Service:** `tokenization-vault`  
-**Rule ID:** `GDPR-5.1c-MINIMIZATION-UNUSED`  
-**Regulatory Citation:** GDPR Article 5(1)(c) — data minimization  
-
-**Description:** Service 'tokenization-vault' stores personal fields ['card_expiry_encrypted'] that do not appear in any API endpoint or outbound data transfer. This suggests excessive collection with no clear purpose.
-
-**Remediation:** Review whether these fields serve a documented purpose. If not, remove them from the data store schema. If they serve an undocumented purpose (e.g., internal analytics), document the lawful basis and purpose limitation.
-
-**Affected Fields:** `card_expiry_encrypted`  
+**Affected Fields:** `billing_address`  
 
 ---
 
@@ -275,11 +275,11 @@
 **Rule ID:** `GDPR-5.1c-MINIMIZATION-UNUSED`  
 **Regulatory Citation:** GDPR Article 5(1)(c) — data minimization  
 
-**Description:** Service 'analytics-warehouse' stores personal fields ['email', 'full_name', 'ip_address'] that do not appear in any API endpoint or outbound data transfer. This suggests excessive collection with no clear purpose.
+**Description:** Service 'analytics-warehouse' stores personal fields ['email', 'full_name', 'ip_address', 'pan_last4'] that do not appear in any API endpoint or outbound data transfer. This suggests excessive collection with no clear purpose.
 
 **Remediation:** Review whether these fields serve a documented purpose. If not, remove them from the data store schema. If they serve an undocumented purpose (e.g., internal analytics), document the lawful basis and purpose limitation.
 
-**Affected Fields:** `email`, `full_name`, `ip_address`  
+**Affected Fields:** `email`, `full_name`, `ip_address`, `pan_last4`  
 
 ---
 
@@ -313,22 +313,7 @@
 
 ---
 
-### Finding 20: Personal data stored but not referenced in any API or transfer
-
-**Severity:** 🟡 MEDIUM  
-**Service:** `3ds-auth-service`  
-**Rule ID:** `GDPR-5.1c-MINIMIZATION-UNUSED`  
-**Regulatory Citation:** GDPR Article 5(1)(c) — data minimization  
-
-**Description:** Service '3ds-auth-service' stores personal fields ['pan_encrypted'] that do not appear in any API endpoint or outbound data transfer. This suggests excessive collection with no clear purpose.
-
-**Remediation:** Review whether these fields serve a documented purpose. If not, remove them from the data store schema. If they serve an undocumented purpose (e.g., internal analytics), document the lawful basis and purpose limitation.
-
-**Affected Fields:** `pan_encrypted`  
-
----
-
-### Finding 21: Full PAN stored but only last-4 digits exposed — data minimization failure
+### Finding 20: Full PAN stored but only last-4 digits exposed — data minimization failure
 
 **Severity:** 🟡 MEDIUM  
 **Service:** `audit-log-service`  
@@ -343,7 +328,7 @@
 
 ---
 
-### Finding 22: Personal data stored but not referenced in any API or transfer
+### Finding 21: Personal data stored but not referenced in any API or transfer
 
 **Severity:** 🟡 MEDIUM  
 **Service:** `audit-log-service`  
@@ -355,5 +340,20 @@
 **Remediation:** Review whether these fields serve a documented purpose. If not, remove them from the data store schema. If they serve an undocumented purpose (e.g., internal analytics), document the lawful basis and purpose limitation.
 
 **Affected Fields:** `ip_address`, `pan_full`  
+
+---
+
+### Finding 22: Personal data stored but not referenced in any API or transfer
+
+**Severity:** 🟡 MEDIUM  
+**Service:** `dispute-management`  
+**Rule ID:** `GDPR-5.1c-MINIMIZATION-UNUSED`  
+**Regulatory Citation:** GDPR Article 5(1)(c) — data minimization  
+
+**Description:** Service 'dispute-management' stores personal fields ['pan_last4'] that do not appear in any API endpoint or outbound data transfer. This suggests excessive collection with no clear purpose.
+
+**Remediation:** Review whether these fields serve a documented purpose. If not, remove them from the data store schema. If they serve an undocumented purpose (e.g., internal analytics), document the lawful basis and purpose limitation.
+
+**Affected Fields:** `pan_last4`  
 
 ---

@@ -13,7 +13,7 @@ Legend: --> (intra-EU / adequate)  ~~> (cross-border, NO safeguard ⚠️)  ..> 
   🟠 [payment-gateway-api]  ~~> ⚠️  [fraud-engine] [cross-border → us-east-1, safeguard: NONE]
      fields: email, ip_address, transaction_amount...
 
-  ⚫ [tokenization-vault]  ~~> ⚠️  [fraud-engine] [cross-border → us-east-1, safeguard: NONE]
+  🟠 [tokenization-vault]  ~~> ⚠️  [fraud-engine] [cross-border → us-east-1, safeguard: NONE]
      fields: token, pan_last4, card_scheme
 
   🟠 [fraud-engine]  -->  [analytics-warehouse]

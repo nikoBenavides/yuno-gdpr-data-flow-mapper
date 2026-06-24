@@ -233,7 +233,16 @@ class DataMinimizationRule(ComplianceRule):
             if classify_fields([f]).get(DataCategory.PII) or
                classify_fields([f]).get(DataCategory.CARDHOLDER_PAN)
         }
-        unused_personal = stored_personal - api_referenced
+        # Normalize: "field_encrypted" / "field_hash" matches API field "field"
+        # so the vault storing card_expiry_encrypted doesn't false-positive when API returns card_expiry
+        def normalize(f: str) -> str:
+            return f.replace("_encrypted", "").replace("_hash", "").replace("_masked", "")
+
+        api_referenced_normalized = {normalize(f) for f in api_referenced}
+        unused_personal = {
+            f for f in stored_personal
+            if f not in api_referenced and normalize(f) not in api_referenced_normalized
+        }
         # Filter out fields that are plausibly internal (customer_id, timestamps, etc.)
         internal_fields = {"customer_id", "merchant_id", "timestamp", "created_at", "updated_at", "kyc_status"}
         unused_personal -= internal_fields

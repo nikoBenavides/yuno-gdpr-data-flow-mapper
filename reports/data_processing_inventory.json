@@ -92,16 +92,16 @@
           "customer_id",
           "email",
           "ip_address",
+          "pan_last4",
           "device_fingerprint",
           "email",
-          "ip_address"
+          "ip_address",
+          "pan_last4"
         ],
         "general": [
           "transaction_amount",
-          "pan_last4",
           "merchant_id",
           "transaction_amount",
-          "pan_last4",
           "fraud_score",
           "model_version"
         ]
@@ -132,6 +132,7 @@
       "data_categories": {
         "pii": [
           "customer_id",
+          "pan_last4",
           "email",
           "billing_address",
           "full_name"
@@ -140,7 +141,6 @@
           "pan_encrypted"
         ],
         "general": [
-          "pan_last4",
           "transaction_history"
         ]
       },
@@ -158,11 +158,11 @@
           "customer_id",
           "email",
           "ip_address",
+          "pan_last4",
           "full_name"
         ],
         "general": [
           "transaction_amount",
-          "pan_last4",
           "country",
           "device_type"
         ]
@@ -304,12 +304,12 @@
       "data_categories": {
         "pii": [
           "customer_id",
+          "pan_last4",
           "full_name",
           "email",
           "billing_address"
         ],
         "general": [
-          "pan_last4",
           "transaction_details",
           "dispute_evidence"
         ]

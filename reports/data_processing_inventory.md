@@ -49,7 +49,7 @@
 
 **Data Categories Processed:**
 
-- PII: ['customer_id', 'email', 'ip_address', 'device_fingerprint', 'email', 'ip_address']
+- PII: ['customer_id', 'email', 'ip_address', 'pan_last4', 'device_fingerprint', 'email', 'ip_address', 'pan_last4']
 
 ## merchant-dashboard
 
@@ -65,7 +65,7 @@
 **Data Categories Processed:**
 
 - Cardholder Data (PAN): ['pan_encrypted']
-- PII: ['customer_id', 'email', 'billing_address', 'full_name']
+- PII: ['customer_id', 'pan_last4', 'email', 'billing_address', 'full_name']
 
 ## analytics-warehouse
 
@@ -80,7 +80,7 @@
 
 **Data Categories Processed:**
 
-- PII: ['customer_id', 'email', 'ip_address', 'full_name']
+- PII: ['customer_id', 'email', 'ip_address', 'pan_last4', 'full_name']
 
 ## notification-service
 
@@ -158,4 +158,4 @@
 
 **Data Categories Processed:**
 
-- PII: ['customer_id', 'full_name', 'email', 'billing_address']
+- PII: ['customer_id', 'pan_last4', 'full_name', 'email', 'billing_address']

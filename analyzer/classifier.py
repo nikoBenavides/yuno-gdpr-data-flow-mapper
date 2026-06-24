@@ -27,6 +27,9 @@ PII_PATTERNS = {
     "owner_dob", "owner_national_id", "national_id", "ssn", "passport_number",
     "bank_account_iban", "iban", "device_fingerprint", "customer_id",
     "owner_full_name", "id_document_scan", "proof_of_address_scan",
+    # pan_last4 is not full PAN (PCI DSS 3.3) but IS personal data under GDPR
+    # because combined with customer_id/email it uniquely identifies a card.
+    "pan_last4", "last4", "card_last4",
 }
 
 EU_REGIONS = {
