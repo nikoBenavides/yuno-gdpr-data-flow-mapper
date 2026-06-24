@@ -3,15 +3,15 @@
 
 ## Executive Summary
 
-**Total findings:** 22  
+**Total findings:** 21  
 **Requires immediate action (Critical + High):** 10  
-**Requires human review (regulatory ambiguity):** 2  
+**Requires human review (regulatory ambiguity):** 1  
 
 | Severity | Count |
 |----------|-------|
 | 🔴 CRITICAL | 4 |
 | 🟠 HIGH | 6 |
-| 🟡 MEDIUM | 12 |
+| 🟡 MEDIUM | 11 |
 | 🟢 LOW | 0 |
 | ℹ️  INFO | 0 |
 
@@ -207,14 +207,14 @@
 
 ---
 
-### Finding 13: Direct identifiers retained 3 years in analytics/fraud store — GDPR/PCI conflict ⚠️ **HUMAN REVIEW REQUIRED**
+### Finding 13: Direct identifiers retained 3 years in fraud/ML store — GDPR/PCI conflict ⚠️ **HUMAN REVIEW REQUIRED**
 
 **Severity:** 🟡 MEDIUM  
 **Service:** `fraud-engine`  
 **Rule ID:** `GDPR-5.1e-FRAUD-LOG-AMBIGUITY`  
 **Regulatory Citation:** GDPR Article 5(1)(c)(e); PCI DSS v4.0 Requirement 10.7; EDPB Guidelines 02/2019 on Article 6(1)(f)  
 
-**Description:** Service 'fraud-engine' retains direct identifiers ['email', 'ip_address'] for 3 years in postgres. GDPR Article 5(1)(e) requires data be kept only as long as necessary; PCI DSS Req 10.7 mandates 1-year minimum for audit logs. Retaining email and IP addresses beyond 1 year for ML training is rarely justified when pseudonymized features would suffice.
+**Description:** Service 'fraud-engine' retains direct identifiers ['email', 'ip_address'] for 3 years. GDPR Article 5(1)(e) requires data be kept only as long as necessary; PCI DSS Req 10.7 mandates 1-year minimum for audit logs. Retaining email and IP addresses beyond 1 year for ML training is rarely justified when pseudonymized features would suffice.
 
 **Remediation:** 1. Pseudonymize/hash email and IP after 1 year — retain behavioral features (transaction_amount, fraud_score, device_fingerprint) for ML. 2. Document a Legitimate Interest Assessment (LIA) if 3-year retention of direct identifiers is deemed necessary. 3. Implement data lifecycle automation to enforce the policy.
 
@@ -224,24 +224,7 @@
 
 ---
 
-### Finding 14: Direct identifiers retained 3 years in analytics/fraud store — GDPR/PCI conflict ⚠️ **HUMAN REVIEW REQUIRED**
-
-**Severity:** 🟡 MEDIUM  
-**Service:** `fraud-engine`  
-**Rule ID:** `GDPR-5.1e-FRAUD-LOG-AMBIGUITY`  
-**Regulatory Citation:** GDPR Article 5(1)(c)(e); PCI DSS v4.0 Requirement 10.7; EDPB Guidelines 02/2019 on Article 6(1)(f)  
-
-**Description:** Service 'fraud-engine' retains direct identifiers ['email', 'ip_address'] for 3 years in s3. GDPR Article 5(1)(e) requires data be kept only as long as necessary; PCI DSS Req 10.7 mandates 1-year minimum for audit logs. Retaining email and IP addresses beyond 1 year for ML training is rarely justified when pseudonymized features would suffice.
-
-**Remediation:** 1. Pseudonymize/hash email and IP after 1 year — retain behavioral features (transaction_amount, fraud_score, device_fingerprint) for ML. 2. Document a Legitimate Interest Assessment (LIA) if 3-year retention of direct identifiers is deemed necessary. 3. Implement data lifecycle automation to enforce the policy.
-
-**Affected Fields:** `email`, `ip_address`  
-
-> **Regulatory Conflict Note:** GDPR minimization vs. PCI audit log retention: Resolution — retain logs but replace direct identifiers with pseudonymous behavioral features after the PCI minimum (1 year).
-
----
-
-### Finding 15: Full PAN stored but only last-4 digits exposed — data minimization failure
+### Finding 14: Full PAN stored but only last-4 digits exposed — data minimization failure
 
 **Severity:** 🟡 MEDIUM  
 **Service:** `merchant-dashboard`  
@@ -256,7 +239,7 @@
 
 ---
 
-### Finding 16: Personal data stored but not referenced in any API or transfer
+### Finding 15: Personal data stored but not referenced in any API or transfer
 
 **Severity:** 🟡 MEDIUM  
 **Service:** `merchant-dashboard`  
@@ -271,7 +254,7 @@
 
 ---
 
-### Finding 17: Personal data stored but not referenced in any API or transfer
+### Finding 16: Personal data stored but not referenced in any API or transfer
 
 **Severity:** 🟡 MEDIUM  
 **Service:** `analytics-warehouse`  
@@ -286,7 +269,7 @@
 
 ---
 
-### Finding 18: Personal data stored but not referenced in any API or transfer
+### Finding 17: Personal data stored but not referenced in any API or transfer
 
 **Severity:** 🟡 MEDIUM  
 **Service:** `notification-service`  
@@ -301,7 +284,7 @@
 
 ---
 
-### Finding 19: Personal data stored but not referenced in any API or transfer
+### Finding 18: Personal data stored but not referenced in any API or transfer
 
 **Severity:** 🟡 MEDIUM  
 **Service:** `merchant-onboarding`  
@@ -316,7 +299,7 @@
 
 ---
 
-### Finding 20: Personal data stored but not referenced in any API or transfer
+### Finding 19: Personal data stored but not referenced in any API or transfer
 
 **Severity:** 🟡 MEDIUM  
 **Service:** `3ds-auth-service`  
@@ -331,7 +314,7 @@
 
 ---
 
-### Finding 21: Full PAN stored but only last-4 digits exposed — data minimization failure
+### Finding 20: Full PAN stored but only last-4 digits exposed — data minimization failure
 
 **Severity:** 🟡 MEDIUM  
 **Service:** `audit-log-service`  
@@ -346,7 +329,7 @@
 
 ---
 
-### Finding 22: Personal data stored but not referenced in any API or transfer
+### Finding 21: Personal data stored but not referenced in any API or transfer
 
 **Severity:** 🟡 MEDIUM  
 **Service:** `audit-log-service`  

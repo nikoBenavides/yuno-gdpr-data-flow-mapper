@@ -319,52 +319,66 @@ class FraudEngineRetentionAmbiguityRule(ComplianceRule):
     DIRECT_IDENTIFIERS = {"email", "ip_address", "full_name", "phone_number"}
 
     def check(self, service: Service, all_services: list[Service]) -> list[Violation]:
-        violations = []
-        for store in service.data_stores:
-            direct_ids = [f for f in store.fields if f.lower() in self.DIRECT_IDENTIFIERS]
-            if not direct_ids:
-                continue
+        is_fraud_or_ml = any(
+            kw in service.service_id
+            for kw in ("fraud", "ml", "model", "risk-engine", "scoring")
+        )
+        if not is_fraud_or_ml:
+            return []
 
-            # Multi-year retention of direct identifiers in ML/analytics stores
-            if service.retention_policy and "year" in service.retention_policy.lower():
-                try:
-                    years = int(service.retention_policy.split()[0])
-                except (ValueError, IndexError):
-                    years = 0
-                if years > 1 and "fraud" in service.service_id or "analytics" in service.service_id or "ml" in service.service_id:
-                    violations.append(Violation(
-                        rule_id=self.rule_id,
-                        severity=Severity.MEDIUM,
-                        service_id=service.service_id,
-                        title=f"Direct identifiers retained {service.retention_policy} in analytics/fraud store — GDPR/PCI conflict",
-                        description=(
-                            f"Service '{service.service_id}' retains direct identifiers "
-                            f"{direct_ids} for {service.retention_policy} in {store.type}. "
-                            f"GDPR Article 5(1)(e) requires data be kept only as long as necessary; "
-                            f"PCI DSS Req 10.7 mandates 1-year minimum for audit logs. "
-                            f"Retaining email and IP addresses beyond 1 year for ML training "
-                            f"is rarely justified when pseudonymized features would suffice."
-                        ),
-                        regulatory_citation=(
-                            "GDPR Article 5(1)(c)(e); PCI DSS v4.0 Requirement 10.7; "
-                            "EDPB Guidelines 02/2019 on Article 6(1)(f)"
-                        ),
-                        remediation=(
-                            "1. Pseudonymize/hash email and IP after 1 year — retain behavioral "
-                            "features (transaction_amount, fraud_score, device_fingerprint) for ML. "
-                            "2. Document a Legitimate Interest Assessment (LIA) if 3-year retention "
-                            "of direct identifiers is deemed necessary. "
-                            "3. Implement data lifecycle automation to enforce the policy."
-                        ),
-                        fields_affected=direct_ids,
-                        requires_human_review=True,
-                        conflict_note=(
-                            "GDPR minimization vs. PCI audit log retention: "
-                            "Resolution — retain logs but replace direct identifiers with "
-                            "pseudonymous behavioral features after the PCI minimum (1 year)."
-                        ),
-                    ))
-        return violations
+        if not service.retention_policy or "year" not in service.retention_policy.lower():
+            return []
+
+        try:
+            years = int(service.retention_policy.split()[0])
+        except (ValueError, IndexError):
+            return []
+
+        if years <= 1:
+            return []
+
+        # Collect direct identifiers across ALL stores (one finding per service, not per store)
+        all_direct_ids = sorted({
+            f
+            for store in service.data_stores
+            for f in store.fields
+            if f.lower() in self.DIRECT_IDENTIFIERS
+        })
+        if not all_direct_ids:
+            return []
+
+        return [Violation(
+            rule_id=self.rule_id,
+            severity=Severity.MEDIUM,
+            service_id=service.service_id,
+            title=f"Direct identifiers retained {service.retention_policy} in fraud/ML store — GDPR/PCI conflict",
+            description=(
+                f"Service '{service.service_id}' retains direct identifiers "
+                f"{all_direct_ids} for {service.retention_policy}. "
+                f"GDPR Article 5(1)(e) requires data be kept only as long as necessary; "
+                f"PCI DSS Req 10.7 mandates 1-year minimum for audit logs. "
+                f"Retaining email and IP addresses beyond 1 year for ML training "
+                f"is rarely justified when pseudonymized features would suffice."
+            ),
+            regulatory_citation=(
+                "GDPR Article 5(1)(c)(e); PCI DSS v4.0 Requirement 10.7; "
+                "EDPB Guidelines 02/2019 on Article 6(1)(f)"
+            ),
+            remediation=(
+                "1. Pseudonymize/hash email and IP after 1 year — retain behavioral "
+                "features (transaction_amount, fraud_score, device_fingerprint) for ML. "
+                "2. Document a Legitimate Interest Assessment (LIA) if 3-year retention "
+                "of direct identifiers is deemed necessary. "
+                "3. Implement data lifecycle automation to enforce the policy."
+            ),
+            fields_affected=all_direct_ids,
+            requires_human_review=True,
+            conflict_note=(
+                "GDPR minimization vs. PCI audit log retention: "
+                "Resolution — retain logs but replace direct identifiers with "
+                "pseudonymous behavioral features after the PCI minimum (1 year)."
+            ),
+        )]
 
 
 class NonEUServiceCrossBorderRule(ComplianceRule):
