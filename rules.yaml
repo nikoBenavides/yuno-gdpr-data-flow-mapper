@@ -1,0 +1,42 @@
+# Policy-as-Code: Custom GDPR/PCI compliance rules
+# Add or modify rules here without touching Python code.
+# Conditions are ANDed together.
+
+rules:
+  - id: CUSTOM-LATAM-PII-NO-SCC
+    framework: GDPR
+    title: "PII transferred to LatAm region without SCC safeguard"
+    severity: HIGH
+    conditions:
+      stores_data_category: pii
+      transfer_to_region_without_safeguard:
+        - sa-east-1
+        - sa-west-1
+    description: "Service '{service_id}' transfers PII to LatAm (Brazil) without Standard Contractual Clauses. Brazil's LGPD is not recognized as adequate by the EU."
+    citation: "GDPR Article 46; Brazil LGPD is not an EU adequacy decision"
+    remediation: "Implement EU SCCs with the LatAm service processor. Conduct a Transfer Impact Assessment for Brazil."
+
+  - id: CUSTOM-APAC-PII-NO-SCC
+    framework: GDPR
+    title: "PII transferred to APAC (non-adequate) without safeguard"
+    severity: HIGH
+    conditions:
+      stores_data_category: pii
+      transfer_to_region_without_safeguard:
+        - ap-southeast-1
+        - ap-southeast-2
+        - ap-south-1
+    description: "Service '{service_id}' transfers PII to APAC region (Singapore/Australia/India) without documented transfer safeguards."
+    citation: "GDPR Article 46; Singapore PDPA is not an EU adequacy decision"
+    remediation: "Implement EU SCCs with APAC processors. Consider EU-local processing for EU cardholder data."
+
+  - id: CUSTOM-MISSING-RETENTION-CARDHOLDER
+    framework: GDPR
+    title: "Cardholder data stored without retention policy"
+    severity: HIGH
+    conditions:
+      stores_data_category: cardholder_pan
+      missing_field: retention_policy
+    description: "Service '{service_id}' stores cardholder PAN data without a documented retention period."
+    citation: "GDPR Article 5(1)(e); PCI DSS v4.0 Requirement 3.2"
+    remediation: "Define retention aligned with contractual need (typically 7 years for payment records under EU financial regulation). Implement automated purge."

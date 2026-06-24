@@ -1,0 +1,316 @@
+{
+  "generated_at": "2026-06-23",
+  "record_count": 10,
+  "records": [
+    {
+      "service_id": "payment-gateway-api",
+      "description": "Primary payment processing API that handles charge requests from merchants",
+      "owner": "payments-team",
+      "region": "eu-west-1",
+      "lawful_basis": "contract",
+      "retention_policy": "7 years",
+      "data_categories": {
+        "pii": [
+          "customer_id",
+          "email",
+          "billing_address",
+          "ip_address"
+        ],
+        "cardholder_pan": [
+          "pan_encrypted",
+          "card_expiry"
+        ],
+        "sensitive_auth_data": [
+          "cvv_encrypted"
+        ]
+      },
+      "cross_border_transfers": [
+        {
+          "to_service": "tokenization-vault",
+          "to_region": "eu-west-1",
+          "fields": [
+            "pan",
+            "card_expiry"
+          ],
+          "safeguard": "internal_eu",
+          "compliant": true
+        },
+        {
+          "to_service": "fraud-engine",
+          "to_region": "us-east-1",
+          "fields": [
+            "email",
+            "ip_address",
+            "transaction_amount",
+            "merchant_id"
+          ],
+          "safeguard": null,
+          "compliant": false
+        }
+      ]
+    },
+    {
+      "service_id": "tokenization-vault",
+      "description": "Stores and manages encrypted PANs, issuing tokens for downstream services",
+      "owner": "security-team",
+      "region": "eu-west-1",
+      "lawful_basis": "contract",
+      "retention_policy": "10 years",
+      "data_categories": {
+        "cardholder_pan": [
+          "pan_encrypted",
+          "card_expiry_encrypted"
+        ],
+        "general": [
+          "token",
+          "card_scheme"
+        ]
+      },
+      "cross_border_transfers": []
+    },
+    {
+      "service_id": "fraud-engine",
+      "description": "ML-based fraud detection service; scores transactions in real time",
+      "owner": "risk-team",
+      "region": "us-east-1",
+      "lawful_basis": "legitimate_interest",
+      "retention_policy": "3 years",
+      "data_categories": {
+        "pii": [
+          "customer_id",
+          "email",
+          "ip_address",
+          "device_fingerprint",
+          "email",
+          "ip_address"
+        ],
+        "general": [
+          "transaction_amount",
+          "pan_last4",
+          "merchant_id",
+          "transaction_amount",
+          "pan_last4",
+          "fraud_score",
+          "model_version"
+        ]
+      },
+      "cross_border_transfers": [
+        {
+          "to_service": "analytics-warehouse",
+          "to_region": "us-east-1",
+          "fields": [
+            "email",
+            "ip_address",
+            "transaction_amount",
+            "fraud_score"
+          ],
+          "safeguard": null,
+          "compliant": false
+        }
+      ]
+    },
+    {
+      "service_id": "merchant-dashboard",
+      "description": "Web portal for merchants to view transactions, refunds, and cardholder data",
+      "owner": "merchant-team",
+      "region": "eu-west-1",
+      "lawful_basis": "contract",
+      "retention_policy": null,
+      "data_categories": {
+        "pii": [
+          "customer_id",
+          "email",
+          "billing_address",
+          "full_name"
+        ],
+        "cardholder_pan": [
+          "pan_encrypted"
+        ],
+        "general": [
+          "pan_last4",
+          "transaction_history"
+        ]
+      },
+      "cross_border_transfers": []
+    },
+    {
+      "service_id": "analytics-warehouse",
+      "description": "Business intelligence and reporting warehouse; aggregates payment data for dashboards",
+      "owner": "data-team",
+      "region": "us-east-1",
+      "lawful_basis": null,
+      "retention_policy": null,
+      "data_categories": {
+        "pii": [
+          "customer_id",
+          "email",
+          "ip_address",
+          "full_name"
+        ],
+        "general": [
+          "transaction_amount",
+          "pan_last4",
+          "country",
+          "device_type"
+        ]
+      },
+      "cross_border_transfers": []
+    },
+    {
+      "service_id": "notification-service",
+      "description": "Sends transactional emails and SMS to cardholders for payment confirmations and alerts",
+      "owner": "comms-team",
+      "region": "eu-west-1",
+      "lawful_basis": "contract",
+      "retention_policy": "2 years",
+      "data_categories": {
+        "pii": [
+          "customer_id",
+          "email",
+          "phone_number"
+        ],
+        "general": [
+          "notification_preferences",
+          "last_notified_at"
+        ]
+      },
+      "cross_border_transfers": [
+        {
+          "to_service": "sendgrid-external",
+          "to_region": "us-east-1",
+          "fields": [
+            "email",
+            "full_name"
+          ],
+          "safeguard": "scc",
+          "compliant": true
+        }
+      ]
+    },
+    {
+      "service_id": "merchant-onboarding",
+      "description": "KYC/AML onboarding workflow for new merchants; stores identity verification data",
+      "owner": "compliance-team",
+      "region": "eu-west-1",
+      "lawful_basis": "legal_obligation",
+      "retention_policy": "5 years",
+      "data_categories": {
+        "general": [
+          "merchant_id",
+          "business_name",
+          "business_address",
+          "kyc_status"
+        ],
+        "pii": [
+          "owner_full_name",
+          "owner_dob",
+          "owner_national_id",
+          "bank_account_iban",
+          "id_document_scan",
+          "proof_of_address_scan"
+        ]
+      },
+      "cross_border_transfers": [
+        {
+          "to_service": "kyc-provider-external",
+          "to_region": "eu-central-1",
+          "fields": [
+            "owner_full_name",
+            "owner_dob",
+            "owner_national_id"
+          ],
+          "safeguard": "internal_eu",
+          "compliant": true
+        }
+      ]
+    },
+    {
+      "service_id": "3ds-auth-service",
+      "description": "Handles 3D Secure authentication challenges for card-present and card-not-present transactions",
+      "owner": "payments-team",
+      "region": "eu-west-1",
+      "lawful_basis": "contract",
+      "retention_policy": "1 year",
+      "data_categories": {
+        "general": [
+          "session_id",
+          "auth_attempt_count",
+          "customer_ip",
+          "auth_result",
+          "timestamp"
+        ],
+        "cardholder_pan": [
+          "pan_encrypted",
+          "pan_encrypted"
+        ],
+        "sensitive_auth_data": [
+          "cvv_hash",
+          "cvv_hash"
+        ],
+        "pii": [
+          "customer_id"
+        ]
+      },
+      "cross_border_transfers": []
+    },
+    {
+      "service_id": "audit-log-service",
+      "description": "Centralized audit log for all access to cardholder data; required for PCI DSS Requirement 10",
+      "owner": "security-team",
+      "region": "eu-west-1",
+      "lawful_basis": "legal_obligation",
+      "retention_policy": "1 year",
+      "data_categories": {
+        "general": [
+          "user_id",
+          "service_id",
+          "action",
+          "timestamp",
+          "resource_id"
+        ],
+        "cardholder_pan": [
+          "pan_full"
+        ],
+        "pii": [
+          "ip_address"
+        ]
+      },
+      "cross_border_transfers": []
+    },
+    {
+      "service_id": "dispute-management",
+      "description": "Manages chargeback disputes and evidence collection between merchants and card networks",
+      "owner": "operations-team",
+      "region": "ap-southeast-1",
+      "lawful_basis": "legal_obligation",
+      "retention_policy": "5 years",
+      "data_categories": {
+        "pii": [
+          "customer_id",
+          "full_name",
+          "email",
+          "billing_address"
+        ],
+        "general": [
+          "pan_last4",
+          "transaction_details",
+          "dispute_evidence"
+        ]
+      },
+      "cross_border_transfers": [
+        {
+          "to_service": "card-network-visa",
+          "to_region": "us-east-1",
+          "fields": [
+            "full_name",
+            "email",
+            "billing_address",
+            "transaction_details"
+          ],
+          "safeguard": null,
+          "compliant": false
+        }
+      ]
+    }
+  ]
+}

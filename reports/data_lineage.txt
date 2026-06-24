@@ -1,0 +1,10 @@
+Data Flow Lineage (ASCII)
+============================================================
+Legend: --> (EU transfer)  ~~> (cross-border, no safeguard)  ..> (cross-border, SCC)
+
+  [payment-gateway-api]  -->  [tokenization-vault]  |  pan, card_expiry  |  cats: ['cardholder_pan']
+  [payment-gateway-api]  ~~> ⚠️  [fraud-engine]  |  email, ip_address, transaction_amount...  |  cats: ['pii', 'general']
+  [fraud-engine]  -->  [analytics-warehouse]  |  email, ip_address, transaction_amount...  |  cats: ['pii', 'general']
+  [notification-service]  ..>  [sendgrid-external]  |  email, full_name  |  cats: ['pii']
+  [merchant-onboarding]  -->  [kyc-provider-external]  |  owner_full_name, owner_dob, owner_national_id  |  cats: ['pii']
+  [dispute-management]  ~~> ⚠️  [card-network-visa]  |  full_name, email, billing_address...  |  cats: ['pii', 'general']

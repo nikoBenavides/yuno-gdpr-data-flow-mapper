@@ -1,0 +1,295 @@
+[
+  {
+    "service_id": "payment-gateway-api",
+    "description": "Primary payment processing API that handles charge requests from merchants",
+    "owner": "payments-team",
+    "region": "eu-west-1",
+    "data_stores": [
+      {
+        "type": "postgres",
+        "fields": ["customer_id", "pan_encrypted", "cvv_encrypted", "card_expiry", "email", "billing_address", "ip_address"]
+      }
+    ],
+    "api_endpoints": [
+      {
+        "path": "/v1/charge",
+        "request_fields": ["pan", "cvv", "card_expiry", "amount", "currency", "customer_id"],
+        "response_fields": ["transaction_id", "status", "pan_last4"]
+      },
+      {
+        "path": "/v1/refund",
+        "request_fields": ["transaction_id", "amount"],
+        "response_fields": ["refund_id", "status"]
+      }
+    ],
+    "retention_policy": "7 years",
+    "lawful_basis": "contract",
+    "data_transfers": [
+      {
+        "to_service": "tokenization-vault",
+        "to_region": "eu-west-1",
+        "fields": ["pan", "card_expiry"],
+        "safeguard": "internal_eu"
+      },
+      {
+        "to_service": "fraud-engine",
+        "to_region": "us-east-1",
+        "fields": ["email", "ip_address", "transaction_amount", "merchant_id"],
+        "safeguard": null
+      }
+    ]
+  },
+  {
+    "service_id": "tokenization-vault",
+    "description": "Stores and manages encrypted PANs, issuing tokens for downstream services",
+    "owner": "security-team",
+    "region": "eu-west-1",
+    "data_stores": [
+      {
+        "type": "hsm-backed-postgres",
+        "fields": ["pan_encrypted", "token", "card_expiry_encrypted", "card_scheme"]
+      }
+    ],
+    "api_endpoints": [
+      {
+        "path": "/v1/tokenize",
+        "request_fields": ["pan", "card_expiry"],
+        "response_fields": ["token", "pan_last4"]
+      },
+      {
+        "path": "/v1/detokenize",
+        "request_fields": ["token"],
+        "response_fields": ["pan_encrypted", "card_expiry"]
+      }
+    ],
+    "retention_policy": "10 years",
+    "lawful_basis": "contract",
+    "data_transfers": []
+  },
+  {
+    "service_id": "fraud-engine",
+    "description": "ML-based fraud detection service; scores transactions in real time",
+    "owner": "risk-team",
+    "region": "us-east-1",
+    "data_stores": [
+      {
+        "type": "postgres",
+        "fields": ["customer_id", "email", "ip_address", "transaction_amount", "pan_last4", "device_fingerprint", "merchant_id"]
+      },
+      {
+        "type": "s3",
+        "fields": ["email", "ip_address", "transaction_amount", "pan_last4", "fraud_score", "model_version"]
+      }
+    ],
+    "api_endpoints": [
+      {
+        "path": "/v1/score",
+        "request_fields": ["customer_id", "transaction_amount", "merchant_id", "device_fingerprint"],
+        "response_fields": ["fraud_score", "risk_level", "recommended_action"]
+      }
+    ],
+    "retention_policy": "3 years",
+    "lawful_basis": "legitimate_interest",
+    "data_transfers": [
+      {
+        "to_service": "analytics-warehouse",
+        "to_region": "us-east-1",
+        "fields": ["email", "ip_address", "transaction_amount", "fraud_score"],
+        "safeguard": null
+      }
+    ]
+  },
+  {
+    "service_id": "merchant-dashboard",
+    "description": "Web portal for merchants to view transactions, refunds, and cardholder data",
+    "owner": "merchant-team",
+    "region": "eu-west-1",
+    "data_stores": [
+      {
+        "type": "postgres",
+        "fields": ["customer_id", "pan_encrypted", "pan_last4", "email", "billing_address", "transaction_history", "full_name"]
+      }
+    ],
+    "api_endpoints": [
+      {
+        "path": "/v1/transactions",
+        "request_fields": ["merchant_id", "date_range"],
+        "response_fields": ["transaction_id", "pan_last4", "amount", "status"]
+      },
+      {
+        "path": "/v1/customer/{id}",
+        "request_fields": ["customer_id"],
+        "response_fields": ["pan_last4", "email", "full_name"]
+      }
+    ],
+    "retention_policy": null,
+    "lawful_basis": "contract",
+    "data_transfers": []
+  },
+  {
+    "service_id": "analytics-warehouse",
+    "description": "Business intelligence and reporting warehouse; aggregates payment data for dashboards",
+    "owner": "data-team",
+    "region": "us-east-1",
+    "data_stores": [
+      {
+        "type": "redshift",
+        "fields": ["customer_id", "email", "ip_address", "transaction_amount", "pan_last4", "country", "device_type", "full_name"]
+      }
+    ],
+    "api_endpoints": [
+      {
+        "path": "/v1/reports/revenue",
+        "request_fields": ["date_range", "merchant_id"],
+        "response_fields": ["total_volume", "transaction_count", "average_amount"]
+      }
+    ],
+    "retention_policy": null,
+    "lawful_basis": null,
+    "data_transfers": []
+  },
+  {
+    "service_id": "notification-service",
+    "description": "Sends transactional emails and SMS to cardholders for payment confirmations and alerts",
+    "owner": "comms-team",
+    "region": "eu-west-1",
+    "data_stores": [
+      {
+        "type": "postgres",
+        "fields": ["customer_id", "email", "phone_number", "notification_preferences", "last_notified_at"]
+      }
+    ],
+    "api_endpoints": [
+      {
+        "path": "/v1/notify",
+        "request_fields": ["customer_id", "template_id", "context"],
+        "response_fields": ["notification_id", "status"]
+      }
+    ],
+    "retention_policy": "2 years",
+    "lawful_basis": "contract",
+    "data_transfers": [
+      {
+        "to_service": "sendgrid-external",
+        "to_region": "us-east-1",
+        "fields": ["email", "full_name"],
+        "safeguard": "scc"
+      }
+    ]
+  },
+  {
+    "service_id": "merchant-onboarding",
+    "description": "KYC/AML onboarding workflow for new merchants; stores identity verification data",
+    "owner": "compliance-team",
+    "region": "eu-west-1",
+    "data_stores": [
+      {
+        "type": "postgres",
+        "fields": ["merchant_id", "business_name", "owner_full_name", "owner_dob", "owner_national_id", "business_address", "bank_account_iban", "kyc_status"]
+      },
+      {
+        "type": "s3",
+        "fields": ["id_document_scan", "proof_of_address_scan"]
+      }
+    ],
+    "api_endpoints": [
+      {
+        "path": "/v1/onboard",
+        "request_fields": ["business_name", "owner_full_name", "owner_dob", "owner_national_id"],
+        "response_fields": ["merchant_id", "kyc_status"]
+      }
+    ],
+    "retention_policy": "5 years",
+    "lawful_basis": "legal_obligation",
+    "data_transfers": [
+      {
+        "to_service": "kyc-provider-external",
+        "to_region": "eu-central-1",
+        "fields": ["owner_full_name", "owner_dob", "owner_national_id"],
+        "safeguard": "internal_eu"
+      }
+    ]
+  },
+  {
+    "service_id": "3ds-auth-service",
+    "description": "Handles 3D Secure authentication challenges for card-present and card-not-present transactions",
+    "owner": "payments-team",
+    "region": "eu-west-1",
+    "data_stores": [
+      {
+        "type": "redis",
+        "fields": ["session_id", "pan_encrypted", "cvv_hash", "auth_attempt_count", "customer_ip"]
+      },
+      {
+        "type": "postgres",
+        "fields": ["customer_id", "pan_encrypted", "cvv_hash", "auth_result", "timestamp"]
+      }
+    ],
+    "api_endpoints": [
+      {
+        "path": "/v1/authenticate",
+        "request_fields": ["pan", "cvv", "card_expiry", "amount", "merchant_id"],
+        "response_fields": ["auth_token", "challenge_required"]
+      }
+    ],
+    "retention_policy": "1 year",
+    "lawful_basis": "contract",
+    "data_transfers": []
+  },
+  {
+    "service_id": "audit-log-service",
+    "description": "Centralized audit log for all access to cardholder data; required for PCI DSS Requirement 10",
+    "owner": "security-team",
+    "region": "eu-west-1",
+    "data_stores": [
+      {
+        "type": "elasticsearch",
+        "fields": ["user_id", "service_id", "action", "pan_full", "timestamp", "ip_address", "resource_id"]
+      }
+    ],
+    "api_endpoints": [
+      {
+        "path": "/v1/logs/query",
+        "request_fields": ["service_id", "date_range", "user_id"],
+        "response_fields": ["log_entries"]
+      }
+    ],
+    "retention_policy": "1 year",
+    "lawful_basis": "legal_obligation",
+    "data_transfers": []
+  },
+  {
+    "service_id": "dispute-management",
+    "description": "Manages chargeback disputes and evidence collection between merchants and card networks",
+    "owner": "operations-team",
+    "region": "ap-southeast-1",
+    "data_stores": [
+      {
+        "type": "postgres",
+        "fields": ["customer_id", "pan_last4", "full_name", "email", "billing_address", "transaction_details", "dispute_evidence"]
+      }
+    ],
+    "api_endpoints": [
+      {
+        "path": "/v1/disputes",
+        "request_fields": ["transaction_id", "reason_code"],
+        "response_fields": ["dispute_id", "status"]
+      },
+      {
+        "path": "/v1/disputes/{id}/evidence",
+        "request_fields": ["dispute_id", "evidence_type", "evidence_data"],
+        "response_fields": ["submission_id", "status"]
+      }
+    ],
+    "retention_policy": "5 years",
+    "lawful_basis": "legal_obligation",
+    "data_transfers": [
+      {
+        "to_service": "card-network-visa",
+        "to_region": "us-east-1",
+        "fields": ["full_name", "email", "billing_address", "transaction_details"],
+        "safeguard": null
+      }
+    ]
+  }
+]

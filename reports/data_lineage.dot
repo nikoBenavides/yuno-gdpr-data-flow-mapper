@@ -1,0 +1,22 @@
+digraph data_flows {
+  rankdir=LR;
+  node [shape=box, style=filled];
+
+  "dispute-management" [label="dispute-management\n(ap-southeast-1)", fillcolor="#f8d7da"];
+  "merchant-onboarding" [label="merchant-onboarding\n(eu-west-1)", fillcolor="#d4edda"];
+  "card-network-visa" [label="card-network-visa\n(unknown)", fillcolor="#f8d7da"];
+  "fraud-engine" [label="fraud-engine\n(us-east-1)", fillcolor="#f8d7da"];
+  "sendgrid-external" [label="sendgrid-external\n(unknown)", fillcolor="#f8d7da"];
+  "payment-gateway-api" [label="payment-gateway-api\n(eu-west-1)", fillcolor="#d4edda"];
+  "kyc-provider-external" [label="kyc-provider-external\n(unknown)", fillcolor="#f8d7da"];
+  "analytics-warehouse" [label="analytics-warehouse\n(us-east-1)", fillcolor="#f8d7da"];
+  "tokenization-vault" [label="tokenization-vault\n(eu-west-1)", fillcolor="#d4edda"];
+  "notification-service" [label="notification-service\n(eu-west-1)", fillcolor="#d4edda"];
+
+  "payment-gateway-api" -> "tokenization-vault" [label="pan, card_expiry\n[internal_eu]", color="#dc3545", style=solid];
+  "payment-gateway-api" -> "fraud-engine" [label="email, ip_address...\n[NO SAFEGUARD]", color="#fd7e14", style=dashed];
+  "fraud-engine" -> "analytics-warehouse" [label="email, ip_address...\n[NO SAFEGUARD]", color="#fd7e14", style=solid];
+  "notification-service" -> "sendgrid-external" [label="email, full_name\n[scc]", color="#fd7e14", style=solid];
+  "merchant-onboarding" -> "kyc-provider-external" [label="owner_full_name, owner_dob...\n[internal_eu]", color="#fd7e14", style=solid];
+  "dispute-management" -> "card-network-visa" [label="full_name, email...\n[NO SAFEGUARD]", color="#fd7e14", style=dashed];
+}
