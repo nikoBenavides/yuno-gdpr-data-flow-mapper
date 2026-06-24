@@ -3,15 +3,15 @@
 
 ## Executive Summary
 
-**Total findings:** 22  
-**Requires immediate action (Critical + High):** 12  
+**Total findings:** 19  
+**Requires immediate action (Critical + High):** 11  
 **Requires human review (regulatory ambiguity):** 1  
 
 | Severity | Count |
 |----------|-------|
 | 🔴 CRITICAL | 4 |
-| 🟠 HIGH | 8 |
-| 🟡 MEDIUM | 10 |
+| 🟠 HIGH | 7 |
+| 🟡 MEDIUM | 8 |
 | 🟢 LOW | 0 |
 | ℹ️  INFO | 0 |
 
@@ -122,35 +122,22 @@
 
 ---
 
-### Finding 7: Non-EU service (us-east-1) holds EU personal data without documented safeguards
+### Finding 7: Non-EU service (us-east-1) holds EU personal data without SCCs
 
 **Severity:** 🟠 HIGH  
 **Service:** `fraud-engine`  
 **Rule ID:** `GDPR-46-RECEIVING-NON-EU`  
-**Regulatory Citation:** GDPR Article 44-46, Chapter V  
+**Regulatory Citation:** GDPR Article 44-46, Chapter V; Schrems II (C-311/18)  
 
-**Description:** Service 'fraud-engine' is located in us-east-1 (non-adequate) and receives EU personal data: ['card_scheme', 'email', 'ip_address', 'merchant_id', 'pan_last4', 'token', 'transaction_amount']. No transfer safeguard is documented for incoming EU data flows.
+**Description:** Service 'fraud-engine' is located in us-east-1 (non-adequate) and receives EU personal data ['email', 'ip_address', 'pan_last4'] from EU senders ['payment-gateway-api', 'tokenization-vault'] without Standard Contractual Clauses or other Article 46 safeguard. Post-Schrems II, all EU→US transfers require SCCs + Transfer Impact Assessment.
 
-**Remediation:** Either: (a) migrate 'fraud-engine' to an EU/adequate region, (b) implement SCCs with all EU senders, or (c) pseudonymize data before transfer so it no longer qualifies as personal data.
+**Remediation:** (a) Implement EU SCCs (June 2021 version) with all EU senders (['payment-gateway-api', 'tokenization-vault']). (b) Complete a Transfer Impact Assessment (TIA) for each sender. (c) Alternatively, migrate 'fraud-engine' to an EU/EEA region.
 
-**Affected Fields:** `card_scheme`, `email`, `ip_address`, `merchant_id`, `pan_last4`, `token`, `transaction_amount`  
-
----
-
-### Finding 8: Service in US receives EU PII without Standard Contractual Clauses
-
-**Severity:** 🟠 HIGH  
-**Service:** `fraud-engine`  
-**Rule ID:** `CUSTOM-US-SERVICE-EU-PII-NO-SCC`  
-**Regulatory Citation:** GDPR Article 46; Schrems II ruling (C-311/18, 2020)  
-
-**Description:** Service 'fraud-engine' is located in the US and receives EU personal data without Standard Contractual Clauses. Post-Schrems II, US transfers require SCCs + Transfer Impact Assessment.
-
-**Remediation:** Implement EU SCCs (June 2021 version) with all EU senders. Conduct a Transfer Impact Assessment (TIA). Consider EU data residency as an alternative.
+**Affected Fields:** `email`, `ip_address`, `pan_last4`  
 
 ---
 
-### Finding 9: No retention policy defined for personal data
+### Finding 8: No retention policy defined for personal data
 
 **Severity:** 🟠 HIGH  
 **Service:** `merchant-dashboard`  
@@ -165,7 +152,7 @@
 
 ---
 
-### Finding 10: Cardholder data stored without retention policy
+### Finding 9: Cardholder data stored without retention policy
 
 **Severity:** 🟠 HIGH  
 **Service:** `merchant-dashboard`  
@@ -178,7 +165,7 @@
 
 ---
 
-### Finding 11: No retention policy defined for personal data
+### Finding 10: No retention policy defined for personal data
 
 **Severity:** 🟠 HIGH  
 **Service:** `analytics-warehouse`  
@@ -193,7 +180,7 @@
 
 ---
 
-### Finding 12: No valid lawful basis documented for personal data processing
+### Finding 11: No valid lawful basis documented for personal data processing
 
 **Severity:** 🟠 HIGH  
 **Service:** `analytics-warehouse`  
@@ -206,7 +193,7 @@
 
 ---
 
-### Finding 13: Personal data stored but not referenced in any API or transfer
+### Finding 12: Personal data stored but not referenced in any API or transfer
 
 **Severity:** 🟡 MEDIUM  
 **Service:** `payment-gateway-api`  
@@ -221,7 +208,7 @@
 
 ---
 
-### Finding 14: Direct identifiers retained 3 years in fraud/ML store — GDPR/PCI conflict ⚠️ **HUMAN REVIEW REQUIRED**
+### Finding 13: Direct identifiers retained 3 years in fraud/ML store — GDPR/PCI conflict ⚠️ **HUMAN REVIEW REQUIRED**
 
 **Severity:** 🟡 MEDIUM  
 **Service:** `fraud-engine`  
@@ -238,7 +225,7 @@
 
 ---
 
-### Finding 15: Full PAN stored but only last-4 digits exposed — data minimization failure
+### Finding 14: Full PAN stored but only last-4 digits exposed — data minimization failure
 
 **Severity:** 🟡 MEDIUM  
 **Service:** `merchant-dashboard`  
@@ -253,7 +240,7 @@
 
 ---
 
-### Finding 16: Personal data stored but not referenced in any API or transfer
+### Finding 15: Personal data stored but not referenced in any API or transfer
 
 **Severity:** 🟡 MEDIUM  
 **Service:** `merchant-dashboard`  
@@ -268,7 +255,7 @@
 
 ---
 
-### Finding 17: Personal data stored but not referenced in any API or transfer
+### Finding 16: Personal data stored but not referenced in any API or transfer
 
 **Severity:** 🟡 MEDIUM  
 **Service:** `analytics-warehouse`  
@@ -283,7 +270,7 @@
 
 ---
 
-### Finding 18: Personal data stored but not referenced in any API or transfer
+### Finding 17: Personal data stored but not referenced in any API or transfer
 
 **Severity:** 🟡 MEDIUM  
 **Service:** `notification-service`  
@@ -298,37 +285,7 @@
 
 ---
 
-### Finding 19: Personal data stored but not referenced in any API or transfer
-
-**Severity:** 🟡 MEDIUM  
-**Service:** `merchant-onboarding`  
-**Rule ID:** `GDPR-5.1c-MINIMIZATION-UNUSED`  
-**Regulatory Citation:** GDPR Article 5(1)(c) — data minimization  
-
-**Description:** Service 'merchant-onboarding' stores personal fields ['bank_account_iban', 'id_document_scan', 'proof_of_address_scan'] that do not appear in any API endpoint or outbound data transfer. This suggests excessive collection with no clear purpose.
-
-**Remediation:** Review whether these fields serve a documented purpose. If not, remove them from the data store schema. If they serve an undocumented purpose (e.g., internal analytics), document the lawful basis and purpose limitation.
-
-**Affected Fields:** `bank_account_iban`, `id_document_scan`, `proof_of_address_scan`  
-
----
-
-### Finding 20: Full PAN stored but only last-4 digits exposed — data minimization failure
-
-**Severity:** 🟡 MEDIUM  
-**Service:** `audit-log-service`  
-**Rule ID:** `GDPR-5.1c-MINIMIZATION`  
-**Regulatory Citation:** GDPR Article 5(1)(c); PCI DSS v4.0 Requirement 3.3  
-
-**Description:** Service 'audit-log-service' stores full PAN (['pan_full']) but all API endpoints only expose pan_last4. If the service doesn't need to transmit or process the full PAN, it should store only the token + last4 and delegate detokenization to the tokenization vault.
-
-**Remediation:** Replace full PAN storage with a token from the tokenization vault. Store only pan_last4 for display purposes. The tokenization vault already provides secure PAN retrieval when needed for authorization.
-
-**Affected Fields:** `pan_full`  
-
----
-
-### Finding 21: Personal data stored but not referenced in any API or transfer
+### Finding 18: Personal data stored but not referenced in any API or transfer
 
 **Severity:** 🟡 MEDIUM  
 **Service:** `audit-log-service`  
@@ -343,7 +300,7 @@
 
 ---
 
-### Finding 22: Personal data stored but not referenced in any API or transfer
+### Finding 19: Personal data stored but not referenced in any API or transfer
 
 **Severity:** 🟡 MEDIUM  
 **Service:** `dispute-management`  

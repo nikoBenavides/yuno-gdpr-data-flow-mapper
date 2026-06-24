@@ -3,21 +3,22 @@
 # Conditions are ANDed together.
 
 rules:
-  # Exact example from the challenge spec:
-  # "flag any service in US processing EU PII without SCCs"
-  - id: CUSTOM-US-SERVICE-EU-PII-NO-SCC
+  # Policy-as-Code example: jurisdiction-specific rule configurable without touching Python.
+  # Flag any service in APAC (non-adequate) that processes EU PII without SCCs.
+  # The built-in CrossBorderTransferRule covers EU senders; this rule covers APAC receivers.
+  - id: CUSTOM-APAC-RECEIVER-EU-PII-NO-SCC
     framework: GDPR
-    title: "Service in US receives EU PII without Standard Contractual Clauses"
+    title: "APAC service receives EU PII without Standard Contractual Clauses"
     severity: HIGH
     conditions:
       service_in_regions_receiving_eu_pii_without_scc:
-        - us-east-1
-        - us-west-1
-        - us-west-2
-        - us-east-2
-    description: "Service '{service_id}' is located in the US and receives EU personal data without Standard Contractual Clauses. Post-Schrems II, US transfers require SCCs + Transfer Impact Assessment."
-    citation: "GDPR Article 46; Schrems II ruling (C-311/18, 2020)"
-    remediation: "Implement EU SCCs (June 2021 version) with all EU senders. Conduct a Transfer Impact Assessment (TIA). Consider EU data residency as an alternative."
+        - ap-southeast-1
+        - ap-southeast-2
+        - ap-south-1
+        - ap-northeast-2
+    description: "Service '{service_id}' is located in APAC (non-adequate region) and receives EU personal data without SCCs. Singapore PDPA and Indian DPDP Act are not recognized as adequate by the EU."
+    citation: "GDPR Article 46; Singapore PDPA not an EU adequacy decision"
+    remediation: "Implement EU SCCs with all EU-region senders. Conduct a Transfer Impact Assessment. Consider whether data can be processed within the EU/EEA instead."
 
   - id: CUSTOM-LATAM-PII-NO-SCC
     framework: GDPR

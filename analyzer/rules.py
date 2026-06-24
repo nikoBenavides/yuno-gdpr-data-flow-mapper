@@ -199,10 +199,13 @@ class DataMinimizationRule(ComplianceRule):
             is_pan_last4(f) or f.lower() not in PAN_PATTERNS
             for f in all_api_fields
         )
-        # Tokenization vault is the legitimate holder of encrypted PAN — not a violation
+        # Tokenization vault is the legitimate holder of encrypted PAN — not a violation.
+        # Audit log service stores PAN as part of its audit trail — already a CRITICAL PCI violation
+        # via FullPANInLogsRule; flagging again as minimization is redundant and misleading.
         is_tokenization_vault = "token" in all_store_fields or service.service_id == "tokenization-vault"
+        is_audit_log = "audit" in service.service_id and "log" in service.service_id
 
-        if has_full_pan_stored and has_pan_last4_only and not is_tokenization_vault:
+        if has_full_pan_stored and has_pan_last4_only and not is_tokenization_vault and not is_audit_log:
             pan_fields = [f for f in all_store_fields if f.lower() in PAN_PATTERNS]
             violations.append(Violation(
                 rule_id=self.rule_id,
@@ -243,8 +246,13 @@ class DataMinimizationRule(ComplianceRule):
             f for f in stored_personal
             if f not in api_referenced and normalize(f) not in api_referenced_normalized
         }
-        # Filter out fields that are plausibly internal (customer_id, timestamps, etc.)
-        internal_fields = {"customer_id", "merchant_id", "timestamp", "created_at", "updated_at", "kyc_status"}
+        # Filter out fields that are plausibly internal or KYC/document storage outputs.
+        # Document scans are stored as a result of processing, not collected without purpose.
+        # IBAN is required for merchant payouts — not unused even if absent from the onboarding API response.
+        internal_fields = {
+            "customer_id", "merchant_id", "timestamp", "created_at", "updated_at", "kyc_status",
+            "id_document_scan", "proof_of_address_scan", "bank_account_iban", "iban",
+        }
         unused_personal -= internal_fields
         if unused_personal:
             violations.append(Violation(
@@ -419,26 +427,45 @@ class NonEUServiceCrossBorderRule(ComplianceRule):
                 if t.to_service == service.service_id and t.safeguard not in ("scc", "adequacy_decision", "binding_corporate_rules"):
                     incoming_unsafeguarded.extend(t.fields)
 
-        if incoming_unsafeguarded:
-            return [Violation(
-                rule_id=self.rule_id,
-                severity=Severity.HIGH,
-                service_id=service.service_id,
-                title=f"Non-EU service ({service.region}) holds EU personal data without documented safeguards",
-                description=(
-                    f"Service '{service.service_id}' is located in {service.region} (non-adequate) "
-                    f"and receives EU personal data: {sorted(set(incoming_unsafeguarded))}. "
-                    f"No transfer safeguard is documented for incoming EU data flows."
-                ),
-                regulatory_citation="GDPR Article 44-46, Chapter V",
-                remediation=(
-                    f"Either: (a) migrate '{service.service_id}' to an EU/adequate region, "
-                    f"(b) implement SCCs with all EU senders, or (c) pseudonymize data before "
-                    f"transfer so it no longer qualifies as personal data."
-                ),
-                fields_affected=sorted(set(incoming_unsafeguarded)),
-            )]
-        return []
+        if not incoming_unsafeguarded:
+            return []
+
+        # Build sender list for the description
+        eu_senders = sorted({
+            sender.service_id
+            for sender in all_services
+            if is_eu_region(sender.region)
+            for t in sender.data_transfers
+            if t.to_service == service.service_id
+            and t.safeguard not in ("scc", "adequacy_decision", "binding_corporate_rules")
+        })
+        personal_incoming = sorted({
+            f for f in set(incoming_unsafeguarded)
+            if classify_fields([f]).get(DataCategory.PII)
+            or classify_fields([f]).get(DataCategory.CARDHOLDER_PAN)
+        })
+        if not personal_incoming:
+            return []
+
+        return [Violation(
+            rule_id=self.rule_id,
+            severity=Severity.HIGH,
+            service_id=service.service_id,
+            title=f"Non-EU service ({service.region}) holds EU personal data without SCCs",
+            description=(
+                f"Service '{service.service_id}' is located in {service.region} (non-adequate) "
+                f"and receives EU personal data {personal_incoming} from EU senders "
+                f"{eu_senders} without Standard Contractual Clauses or other Article 46 safeguard. "
+                f"Post-Schrems II, all EU→US transfers require SCCs + Transfer Impact Assessment."
+            ),
+            regulatory_citation="GDPR Article 44-46, Chapter V; Schrems II (C-311/18)",
+            remediation=(
+                f"(a) Implement EU SCCs (June 2021 version) with all EU senders ({eu_senders}). "
+                f"(b) Complete a Transfer Impact Assessment (TIA) for each sender. "
+                f"(c) Alternatively, migrate '{service.service_id}' to an EU/EEA region."
+            ),
+            fields_affected=personal_incoming,
+        )]
 
 
 ALL_RULES: list[ComplianceRule] = [

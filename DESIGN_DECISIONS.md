@@ -6,15 +6,17 @@ This document explains the interpretive choices made when translating GDPR and P
 
 ---
 
-## 1. Is `pan_last4` Cardholder Data?
+## 1. Is `pan_last4` Cardholder Data? Is it Personal Data?
 
-**Decision: No — `pan_last4` is not flagged as cardholder data or a PCI DSS violation.**
+**Two separate questions with different answers.**
 
-PCI DSS v4.0 Requirement 3.3 explicitly allows storing the last four digits of a PAN as long as the full PAN is not recoverable. `pan_last4` alone cannot be used to reconstruct a card number, initiate a transaction, or identify a specific card without additional data. The standard's intent is to protect the full account number, not derived display artifacts.
+**Under PCI DSS — No.** PCI DSS v4.0 Requirement 3.3 explicitly permits storing the last four digits of a PAN. It cannot be used to reconstruct the full account number or initiate a transaction. The tool does not flag `pan_last4` as a PCI DSS violation.
 
-However, I do include `pan_last4` fields when assessing data minimization (GDPR Article 5(1)(c)): if a service stores full encrypted PAN *and* exposes only `pan_last4` in its APIs, that is flagged as a data minimization issue — not a PCI DSS violation, but a GDPR concern. The service should hold only the token + last4 and delegate PAN retrieval to the tokenization vault.
+**Under GDPR — Yes.** `pan_last4` combined with `customer_id`, `email`, or `full_name` (all commonly stored alongside it) is sufficient to identify a specific payment instrument belonging to a natural person. GDPR Article 4(1) defines personal data as "any information relating to an identified or identifiable natural person." Combined with other stored fields, `pan_last4` meets this threshold. The tool therefore classifies `pan_last4` as **PII under GDPR** for cross-border transfer analysis, retention policy checks, and DSAR scoping — while correctly not treating it as cardholder data for PCI DSS purposes.
 
-**Contrast**: The `tokenization-vault` service stores `pan_encrypted` and is *not* flagged for data minimization, because storing and managing encrypted PANs is its explicit, documented purpose. Context matters — the same field can be compliant in one service and a violation in another.
+This distinction matters for cross-border transfers: the `tokenization-vault → fraud-engine` transfer of `pan_last4` to `us-east-1` without SCCs is a **GDPR Article 46 violation**, even though it is not a PCI DSS violation.
+
+**Data minimization nuance**: if a service stores full encrypted PAN but exposes only `pan_last4` in its APIs, that is flagged as GDPR Article 5(1)(c) violation — the service should hold only a token + last4 and delegate PAN retrieval to the tokenization vault. The `tokenization-vault` itself is exempted from this rule because storing and managing encrypted PANs is its explicit documented purpose.
 
 ---
 
