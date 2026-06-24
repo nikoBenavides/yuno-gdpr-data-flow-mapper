@@ -156,7 +156,7 @@
     "data_stores": [
       {
         "type": "postgres",
-        "fields": ["customer_id", "email", "phone_number", "notification_preferences", "last_notified_at"]
+        "fields": ["customer_id", "email", "phone_number", "notification_preferences", "last_notified_at", "date_of_birth", "billing_address", "full_name", "ip_address"]
       }
     ],
     "api_endpoints": [

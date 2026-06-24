@@ -95,7 +95,7 @@
 
 **Data Categories Processed:**
 
-- PII: ['customer_id', 'email', 'phone_number']
+- PII: ['customer_id', 'email', 'phone_number', 'date_of_birth', 'billing_address', 'full_name', 'ip_address']
 
 ## merchant-onboarding
 

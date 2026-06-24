@@ -167,7 +167,11 @@
         "pii": [
           "customer_id",
           "email",
-          "phone_number"
+          "phone_number",
+          "date_of_birth",
+          "billing_address",
+          "full_name",
+          "ip_address"
         ],
         "general": [
           "notification_preferences",

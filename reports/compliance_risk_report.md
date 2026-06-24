@@ -293,11 +293,11 @@
 **Rule ID:** `GDPR-5.1c-MINIMIZATION-UNUSED`  
 **Regulatory Citation:** GDPR Article 5(1)(c) — data minimization  
 
-**Description:** Service 'notification-service' stores personal fields ['phone_number'] that do not appear in any API endpoint or outbound data transfer. This suggests excessive collection with no clear purpose.
+**Description:** Service 'notification-service' stores personal fields ['billing_address', 'date_of_birth', 'ip_address', 'phone_number'] that do not appear in any API endpoint or outbound data transfer. This suggests excessive collection with no clear purpose.
 
 **Remediation:** Review whether these fields serve a documented purpose. If not, remove them from the data store schema. If they serve an undocumented purpose (e.g., internal analytics), document the lawful basis and purpose limitation.
 
-**Affected Fields:** `phone_number`  
+**Affected Fields:** `billing_address`, `date_of_birth`, `ip_address`, `phone_number`  
 
 ---
 
